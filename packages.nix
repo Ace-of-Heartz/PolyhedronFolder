@@ -17,7 +17,7 @@
 # the package itself.
 
 stdenv.mkDerivation {
-  name = "AquaticApeExperiment";
+  name = "PolyhedronFolder";
 
   # good source filtering is important for caching of builds.
   # It's easier when subprojects have their own distinct subfolders.
