@@ -55,10 +55,6 @@ protected:
 
 	float m_ElapsedTimeInSec = 0.0f;
 
-	glm::vec3 EvaluatePathPosition() const;
-	glm::vec3 EvaluatePathTangent() const;
-
-
 	// Kamera
 	Camera m_camera;
 	CameraManipulator m_cameraManipulator;
@@ -69,7 +65,7 @@ protected:
 	
 	// shaderekhez szükséges változók
 	GLuint m_programID = 0;		  // shaderek programja
-	GLuint m_programSkyboxID = 0; // skybox programja
+
 	GLuint m_programAxis = 0;
 
 	// Fényforrás- ...
@@ -93,8 +89,7 @@ protected:
 	// Shaderek inicializálása, és törtlése
 	void InitShaders();
 	void CleanShaders();
-	void InitSkyboxShaders();
-	void CleanSkyboxShaders();
+
 
 	// Geometriával kapcsolatos változók
 
@@ -105,18 +100,14 @@ protected:
 	// Geometria inicializálása, és törtlése
 	void InitGeometry();
 	void CleanGeometry();
-	void InitSkyboxGeometry();
-	void CleanSkyboxGeometry();
 
 	// Textúrázás, és változói
     GLuint m_SamplerID = 0;
 
-	GLuint m_PolyhedronTex = 0;
+	GLuint m_PolyhedronTextureID = 0;
 
 	void InitTextures();
 	void CleanTextures();
-	void InitSkyboxTextures();
-	void CleanSkyboxTextures();
 
 	void SetLightingUniforms( GLuint program, float Shininess, glm::vec3 Ka = glm::vec3( 1.0 ), glm::vec3 Kd  = glm::vec3( 1.0 ), glm::vec3 Ks  = glm::vec3( 1.0 ) );
 };

@@ -46,104 +46,25 @@ void CMyApp::InitShaders()
     	.Link();
 
 
-	InitSkyboxShaders();
 }
 
-void CMyApp::InitSkyboxShaders()
-{
-	m_programSkyboxID = glCreateProgram();
-	ProgramBuilder{ m_programSkyboxID }
-		.ShaderStage(GL_VERTEX_SHADER, "Shaders/Vert_skybox.vert")
-		.ShaderStage(GL_FRAGMENT_SHADER, "Shaders/Frag_skybox.frag")
-		.Link();
-}
 
 void CMyApp::CleanShaders()
 {
 	glDeleteProgram( m_programID );
 	glDeleteProgram( m_programAxis);
-	CleanSkyboxShaders();
 }
 
-void CMyApp::CleanSkyboxShaders()
-{
-	glDeleteProgram( m_programSkyboxID );
-}
+
 
 void CMyApp::InitGeometry()
 {
 
-	const std::initializer_list<VertexAttributeDescriptor> vertexAttribList =
-	{
-		{ 0, offsetof( Vertex, position ), 3, GL_FLOAT },
-		{ 1, offsetof( Vertex, normal   ), 3, GL_FLOAT },
-		{ 2, offsetof( Vertex, texcoord ), 2, GL_FLOAT },
-	};
-
-	// Suzanne
-
-	MeshObject<Vertex> suzanneMeshCPU = ObjParser::parse("Assets/Suzanne.obj");
-
-	m_SuzanneGPU = CreateGLObjectFromMesh( suzanneMeshCPU, vertexAttribList );
-
-	// Skybox
-	InitSkyboxGeometry();
 }
 
 void CMyApp::CleanGeometry()
 {
-	CleanOGLObject( m_SuzanneGPU );
-	CleanSkyboxGeometry();
-}
-
-void CMyApp::InitSkyboxGeometry()
-{
-	// skybox geo
-	MeshObject<glm::vec3> skyboxCPU =
-	{
-		std::vector<glm::vec3>
-		{
-			// hátsó lap
-			glm::vec3(-1, -1, -1),
-			glm::vec3( 1, -1, -1),
-			glm::vec3( 1,  1, -1),
-			glm::vec3(-1,  1, -1),
-			// elülső lap
-			glm::vec3(-1, -1, 1),
-			glm::vec3( 1, -1, 1),
-			glm::vec3( 1,  1, 1),
-			glm::vec3(-1,  1, 1),
-		},
-
-		std::vector<GLuint>
-		{
-			// hátsó lap
-			0, 1, 2,
-			2, 3, 0,
-			// elülső lap
-			4, 6, 5,
-			6, 4, 7,
-			// bal
-			0, 3, 4,
-			4, 3, 7,
-			// jobb
-			1, 5, 2,
-			5, 6, 2,
-			// alsó
-			1, 0, 4,
-			1, 4, 5,
-			// felső
-			3, 2, 6,
-			3, 6, 7,
-		}
-	};
-
-	m_SkyboxGPU = CreateGLObjectFromMesh( skyboxCPU, { { 0, offsetof( glm::vec3,x ), 3, GL_FLOAT } } );
-}
-
-void CMyApp::CleanSkyboxGeometry()
-{
-	CleanOGLObject( m_SkyboxGPU );
+	CleanOGLObject( m_PolyhedronObject );
 }
 
 void CMyApp::InitTextures()
@@ -158,57 +79,21 @@ void CMyApp::InitTextures()
 
 	// diffuse texture
 
-	ImageRGBA SuzanneImage = ImageFromFile( "Assets/wood.jpg" );
+	ImageRGBA PolyhedronImage = ImageFromFile( "Assets/wood.jpg" );
 
-	glCreateTextures( GL_TEXTURE_2D, 1, &m_SuzanneTextureID );
-	glTextureStorage2D( m_SuzanneTextureID, NumberOfMIPLevels( SuzanneImage ), GL_RGBA8, SuzanneImage.width, SuzanneImage.height );
-	glTextureSubImage2D( m_SuzanneTextureID, 0, 0, 0, SuzanneImage.width, SuzanneImage.height, GL_RGBA, GL_UNSIGNED_BYTE, SuzanneImage.data() );
+	glCreateTextures( GL_TEXTURE_2D, 1, &m_PolyhedronTextureID );
+	glTextureStorage2D( m_PolyhedronTextureID, NumberOfMIPLevels( PolyhedronImage ), GL_RGBA8, PolyhedronImage.width, PolyhedronImage.height );
+	glTextureSubImage2D( m_PolyhedronTextureID, 0, 0, 0, PolyhedronImage.width, PolyhedronImage.height, GL_RGBA, GL_UNSIGNED_BYTE, PolyhedronImage.data() );
 
-	glGenerateTextureMipmap( m_SuzanneTextureID );
+	glGenerateTextureMipmap( m_PolyhedronTextureID );
 
-	InitSkyboxTextures();
 }
 
 void CMyApp::CleanTextures()
 {
-	glDeleteTextures( 1, &m_SuzanneTextureID );
-
-	CleanSkyboxTextures();
+	glDeleteTextures( 1, &m_PolyhedronTextureID );
 }
 
-void CMyApp::InitSkyboxTextures()
-{
-	// skybox texture
-	static const char* skyboxFiles[6] = {
-		"Assets/xpos.png",
-		"Assets/xneg.png",
-		"Assets/ypos.png",
-		"Assets/yneg.png",
-		"Assets/zpos.png",
-		"Assets/zneg.png",
-	};
-
-	ImageRGBA images[ 6 ];
-	for ( int i = 0; i < 6; ++i )
-	{
-		images[ i ] = ImageFromFile( skyboxFiles[ i ], false );
-	}
-
-	glCreateTextures( GL_TEXTURE_CUBE_MAP, 1, &m_SkyboxTextureID );
-	glTextureStorage2D( m_SkyboxTextureID, 1, GL_RGBA8, images[ 0 ].width, images[ 0 ].height );
-
-	for ( int face = 0; face < 6; ++face )
-	{
-		glTextureSubImage3D( m_SkyboxTextureID, 0, 0, 0, face, images[ face ].width, images[ face ].height, 1, GL_RGBA, GL_UNSIGNED_BYTE, images[ face ].data() );
-	}
-
-	glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
-}
-
-void CMyApp::CleanSkyboxTextures()
-{
-	glDeleteTextures( 1, &m_SkyboxTextureID );
-}
 
 bool CMyApp::Init()
 {
@@ -216,9 +101,6 @@ bool CMyApp::Init()
 
 	// törlési szín legyen kékes
 	glClearColor(0.125f, 0.25f, 0.5f, 1.0f);
-
-	glPointSize( 16.0f ); // nagyobb pontok
-	glLineWidth( 4.0f ); // vastagabb vonalak
 
 	InitShaders();
 	InitGeometry();
@@ -241,9 +123,7 @@ bool CMyApp::Init()
 
 	m_cameraManipulator.SetCamera( &m_camera );
 
-	// kontrolpontok
-	m_controlPoints.push_back(glm::vec3(-1.0f, 0.0, -1.0f));
-	m_controlPoints.push_back(glm::vec3( 1.0f, 0.0,  1.0f));
+
 
 	return true;
 }
@@ -297,19 +177,8 @@ void CMyApp::Render()
 	// - Uniform paraméterek
 	// view és projekciós mátrix
 	glProgramUniformMatrix4fv( m_programID, ul( m_programID,"viewProj"), 1, GL_FALSE, glm::value_ptr( m_camera.GetViewProj() ) );
-	
 
-	glm::vec3 pos1 = m_controlPoints[0];
-	glm::vec3 pos2 = m_controlPoints[1];
-    glm::vec3 current_pos = (1.f - m_currentParam) * pos1 + m_currentParam * pos2;
-
-	glm::vec3 u = normalize(pos2 - pos1);
-	glm::vec3 v = glm::normalize(glm::cross(u,glm::vec3(0.,1.,0.)));
-	glm::vec3 w = glm::cross(u,v);
-
-	//glm::mat4 lookAtMtx = glm::lookAt(current_pos,pos2,glm::vec3(0.f,1.f,0.f));
-	//glm::mat4 matWorld = glm::inverse(lookAtMtx);
-	glm::mat4 matWorld = glm::translate(current_pos) * glm::mat4(glm::mat3(-v,-w,u));
+	glm::mat4 matWorld = glm::mat4( 1.0f );
 
 	glProgramUniformMatrix4fv( m_programID, ul( m_programID,"world" ),    1, GL_FALSE, glm::value_ptr( matWorld ) );
 	glProgramUniformMatrix4fv( m_programID, ul( m_programID,"worldIT" ),  1, GL_FALSE, glm::value_ptr( glm::transpose( glm::inverse( matWorld ) ) ) );
@@ -320,54 +189,20 @@ void CMyApp::Render()
 	glProgramUniform1i( m_programID, ul( m_programID,"texImage" ), 0 );
 
 	// - Textúrák beállítása, minden egységre külön
-	glBindTextureUnit( 0, m_SuzanneTextureID );
+	glBindTextureUnit( 0, m_PolyhedronTextureID );
 	glBindSampler( 0, m_SamplerID );
 
     // - VAO
-	glBindVertexArray( m_SuzanneGPU.vaoID );
+	glBindVertexArray( m_PolyhedronObject.vaoID );
 
     // - Program
 	glUseProgram( m_programID );
 
 	// Rajzolási parancs kiadása
 	glDrawElements( GL_TRIANGLES,    
-					m_SuzanneGPU.count,			 
+					m_PolyhedronObject.count,
 					GL_UNSIGNED_INT,
 					nullptr );
-
-	//
-	// skybox
-	//
-
-	// mentsük el az előző Z-test eredményt, azaz azt a relációt, ami alapján update-eljük a pixelt.
-	GLint prevDepthFnc;
-	glGetIntegerv(GL_DEPTH_FUNC, &prevDepthFnc);
-
-	// most kisebb-egyenlőt használjunk, mert mindent kitolunk a távoli vágósíkokra
-	glDepthFunc(GL_LEQUAL);
-
-	// - uniform parameterek
-	glProgramUniformMatrix4fv( m_programSkyboxID, ul( m_programSkyboxID,"viewProj"), 1, GL_FALSE, glm::value_ptr( m_camera.GetViewProj() ) );
-	glProgramUniformMatrix4fv( m_programSkyboxID, ul( m_programSkyboxID,"world"),    1, GL_FALSE, glm::value_ptr( glm::translate( m_camera.GetEye() ) ) );
-
-	// - textúraegységek beállítása
-	glProgramUniform1i( m_programSkyboxID, ul( m_programSkyboxID,"skyboxTexture" ), 2 );
-
-
-	// - Textura
-	glBindTextureUnit( 2, m_SkyboxTextureID );
-	glBindSampler( 2, m_SamplerID );
-
-	// - VAO
-	glBindVertexArray( m_SkyboxGPU.vaoID );
-
-	// - Program
-	glUseProgram( m_programSkyboxID );
-
-	// - Rajzolas
-	glDrawElements( GL_TRIANGLES, m_SkyboxGPU.count, GL_UNSIGNED_INT, nullptr );
-
-	glDepthFunc(prevDepthFnc);
 
 	// shader kikapcsolasa
 	glUseProgram( 0 );
@@ -379,35 +214,35 @@ void CMyApp::Render()
 	// VAO kikapcsolása
 	glBindVertexArray( 0 );
 
-	glm::mat4 matWorld2 = glm::translate(pos1);
-
-	glDisable(GL_DEPTH_TEST);
-
-	glProgramUniform1f(m_programAxis, ul(m_programAxis, "mult"), 0.5f);
-
-	glProgramUniformMatrix4fv(m_programAxis, ul(m_programAxis, "viewProj"), 1, GL_FALSE, glm::value_ptr(m_camera.GetViewProj()));
-	glProgramUniformMatrix4fv(m_programAxis, ul(m_programAxis, "world"), 1, GL_FALSE, glm::value_ptr(matWorld));
-
-	glUseProgram(m_programAxis);
-
-	glDrawArrays(GL_LINES, 0, 6);
-
-	glEnable(GL_DEPTH_TEST);
-
-	matWorld2 = glm::translate(pos2);
-
-	glDisable(GL_DEPTH_TEST);
-
-	glProgramUniform1f(m_programAxis, ul(m_programAxis, "mult"), 0.5f);
-
-	glProgramUniformMatrix4fv(m_programAxis, ul(m_programAxis, "viewProj"), 1, GL_FALSE, glm::value_ptr(m_camera.GetViewProj()));
-	glProgramUniformMatrix4fv(m_programAxis, ul(m_programAxis, "world"), 1, GL_FALSE, glm::value_ptr(matWorld2));
-
-	glUseProgram(m_programAxis);
-
-	glDrawArrays(GL_LINES, 0, 6);
-
-	glEnable(GL_DEPTH_TEST);
+	// glm::mat4 matWorld2 = glm::translate(pos1);
+	//
+	// glDisable(GL_DEPTH_TEST);
+	//
+	// glProgramUniform1f(m_programAxis, ul(m_programAxis, "mult"), 0.5f);
+	//
+	// glProgramUniformMatrix4fv(m_programAxis, ul(m_programAxis, "viewProj"), 1, GL_FALSE, glm::value_ptr(m_camera.GetViewProj()));
+	// glProgramUniformMatrix4fv(m_programAxis, ul(m_programAxis, "world"), 1, GL_FALSE, glm::value_ptr(matWorld));
+	//
+	// glUseProgram(m_programAxis);
+	//
+	// glDrawArrays(GL_LINES, 0, 6);
+	//
+	// glEnable(GL_DEPTH_TEST);
+	//
+	// matWorld2 = glm::translate(pos2);
+	//
+	// glDisable(GL_DEPTH_TEST);
+	//
+	// glProgramUniform1f(m_programAxis, ul(m_programAxis, "mult"), 0.5f);
+	//
+	// glProgramUniformMatrix4fv(m_programAxis, ul(m_programAxis, "viewProj"), 1, GL_FALSE, glm::value_ptr(m_camera.GetViewProj()));
+	// glProgramUniformMatrix4fv(m_programAxis, ul(m_programAxis, "world"), 1, GL_FALSE, glm::value_ptr(matWorld2));
+	//
+	// glUseProgram(m_programAxis);
+	//
+	// glDrawArrays(GL_LINES, 0, 6);
+	//
+	// glEnable(GL_DEPTH_TEST);
 }
 
 void CMyApp::RenderGUI()
@@ -433,7 +268,7 @@ void CMyApp::RenderGUI()
 		}
 
 		{
-			static glm::vec2 lightPosXZ = glm::vec2( 0.0f );
+			static auto lightPosXZ = glm::vec2( 0.0f );
 			lightPosXZ = glm::vec2( m_lightPos.x, m_lightPos.z );
 			if ( ImGui::SliderFloat2( "Light Position XZ", glm::value_ptr( lightPosXZ ), -1.0f, 1.0f ) )
 			{
@@ -452,15 +287,6 @@ void CMyApp::RenderGUI()
 		}
 	}
 	ImGui::End();
-
-	if (ImGui::Begin("Params"))
-	{
-		ImGui::SliderFloat("m_currentParam",&m_currentParam,0.f,1.f);
-		ImGui::DragFloat3("pos1",&m_controlPoints[0].x,0.1f);
-		ImGui::DragFloat3("pos2",&m_controlPoints[1].x,0.1f);
-
-		ImGui::End();
-	}
 
 }
 
@@ -536,38 +362,4 @@ void CMyApp::OtherEvent( const SDL_Event& ev )
 
 }
 
-// Pozíció kiszámítása a kontrollpontok alapján
-glm::vec3 CMyApp::EvaluatePathPosition() const
-{
-	if (m_controlPoints.size() == 0) // Ha nincs pont, akkor visszaadjuk az origót
-		return glm::vec3(0);
 
-	const int interval = (const int)m_currentParam; // Melyik két pont között vagyunk?
-
-	if (interval < 0) // Ha a paraméter negatív, akkor a kezdőpontot adjuk vissza
-		return m_controlPoints[0];
-
-	if (interval >= m_controlPoints.size() - 1) // Ha a paraméter nagyobb, mint a pontok száma, akkor az utolsó pontot adjuk vissza
-		return m_controlPoints[m_controlPoints.size() - 1];
-
-	float localT = m_currentParam - interval; // A paramétert normalizáljuk az aktuális intervallumra
-	
-	return glm::mix( m_controlPoints[interval], m_controlPoints[interval + 1], localT ); // Lineárisan interpolálunk a két kontrollpont között
-}
-
-// Tangens kiszámítása a kontrollpontok alapján
-glm::vec3 CMyApp::EvaluatePathTangent() const
-{
-	if (m_controlPoints.size() < 2) // Ha nincs elég pont az interpolációhoy, akkor visszaadjuk az x tengelyt
-		return glm::vec3(1.0,0.0,0.0);
-
-	int interval = (int)m_currentParam; // Melyik két pont között vagyunk?
-
-	if (interval < 0) // Ha a paraméter negatív, akkor a kezdő intervallumot adjuk vissza
-		interval = 0;
-
-	if (interval >= m_controlPoints.size() - 1) // Ha a paraméter nagyobb, mint az intervallumok száma, akkor az utolsót adjuk vissza
-		interval = static_cast<int>( m_controlPoints.size() - 2 );
-
-	return glm::normalize(m_controlPoints[interval + 1] - m_controlPoints[interval]);
-}
