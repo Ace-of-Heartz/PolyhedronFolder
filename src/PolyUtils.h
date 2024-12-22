@@ -10,30 +10,34 @@
 
 inline size_t key(int i,int j) {return (size_t) i << 32 | (unsigned int) j;}
 
-class PolyUtils {
-public:
-    PolyUtils();
-    static MeshObject<Vertex> ConstrPolyFace(int n);
+namespace PolyhedronFolder {
+    class PolyUtils {
+    public:
+        PolyUtils() = delete;
+        static MeshObject<Vertex> ConstrPolyFace(int n);
+        static std::initializer_list<VertexAttributeDescriptor> GetVertexAttributeDescriptors();
 
-    float GetDefaultAngle(const int& n,const int& m) const {
-        return defaultAngles.at(key(n,m));
-    }
+        static float GetDefaultAngle(const int& n,const int& m) {
+            return defaultAngles.at(key(n,m));
+        }
 
-    float GetDefaultAngle(const std::pair<int,int>& n) const {
-        return defaultAngles.at(key(n.first,n.second));
-    }
+        static float GetDefaultAngle(const std::pair<int,int>& n) {
+            return defaultAngles.at(key(n.first,n.second));
+        }
 
-    void SetDefaultAngle(const int& n, const int& m, float angle) {
-        defaultAngles[key(n,m)] = angle;
-    }
+        static void SetDefaultAngle(const int& n, const int& m, float angle) {
+            defaultAngles[key(n,m)] = angle;
+        }
 
-    void SetDefaultAngle(const std::pair<int,int>& n, float a) {
-        defaultAngles[key(n.first,n.second)] = a;
-    }
+        static void SetDefaultAngle(const std::pair<int,int>& n, float a) {
+            defaultAngles[key(n.first,n.second)] = a;
+        }
 
-private:
-    std::unordered_map<size_t, float> defaultAngles;
-};
+    private:
+        static std::unordered_map<size_t, float> defaultAngles;
+    };
+}
+
 
 
 
