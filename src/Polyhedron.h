@@ -8,44 +8,35 @@
 #include "GLUtils.hpp"
 
 namespace PolyhedronFolder {
-    struct AbstractPolyhedronFace {
+
+    class PolyhedronFace {
     public:
-        AbstractPolyhedronFace(float angle,glm::mat4 tfMat);
-        virtual ~AbstractPolyhedronFace() = 0;
-
-        virtual glm::mat4 Transform(float t) = 0;
-
-    protected:
-        AbstractPolyhedronFace* parent = nullptr;
-
-        float angle = 0.0f;
-        glm::mat4 transformMtx = glm::mat4(1.0f);
-
-    } typedef AbstractPolyhedronFace;
-
-    template<int N>
-    class PolyhedronFace : public AbstractPolyhedronFace {
-    public:
-        PolyhedronFace();
-        ~PolyhedronFace() override {
-            delete[] children;
-        };
+        PolyhedronFace(uint n,float angle,glm::mat4 tfMat);
+        ~PolyhedronFace();
 
 
         void Add(int n);
-        AbstractPolyhedronFace* Push(int n);
+        PolyhedronFace* Push(int n);
         void Pop();
-        glm::mat4 Transform(float t) override;
+        glm::mat4 Transform(float t);
 
-        int static GetEdgeCount() {return N;}
+
+
+
+        [[nodiscard]] unsigned int GetEdgeCount() const {return numberOfEdges;}
 
 
     private:
         typedef struct MeshObject<Vertex> Mesh;
         Mesh mesh;
 
-        AbstractPolyhedronFace* children[N];
+        std::vector<PolyhedronFace*> children;
+        PolyhedronFace* parent;
         int activeNeighbourIdx = 0;
+
+        unsigned int numberOfEdges = 0;
+        float angle = 0.0f;
+        glm::mat4 transformMtx = glm::mat4(1.0f);
     };
 }
 

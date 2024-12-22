@@ -6,8 +6,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtx/transform.hpp>
 
-template<int N>
-glm::mat4 PolyhedronFolder::PolyhedronFace<N>::Transform(float t) {
+glm::mat4 PolyhedronFolder::PolyhedronFace::Transform(float t) {
     auto result = glm::mat4(1.0f);
 
     if (t < 0.0f || t > 1.0f) {
@@ -15,7 +14,7 @@ glm::mat4 PolyhedronFolder::PolyhedronFace<N>::Transform(float t) {
     }
 
     if(parent != nullptr) {
-        const float radian = std::lerp(0,angle,t);
+        const float radian = std::lerp(0.f,angle,t);
         const auto rotationMtx = glm::rotate(glm::mat4(1.0f), radian, glm::vec3(0.0f, 0.0f, 1.0f));
 
         result = parent->Transform(t) * transformMtx * rotationMtx;
