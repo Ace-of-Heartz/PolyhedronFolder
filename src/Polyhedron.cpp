@@ -2,6 +2,10 @@
 // Created by ace on 2024.12.18.
 //
 
+#ifndef GLM_ENABLE_EXPERIMENTAL
+#define GLM_ENABLE_EXPERIMENTAL
+#endif
+
 #include "Polyhedron.h"
 #include <glm/glm.hpp>
 #include <glm/gtx/transform.hpp>

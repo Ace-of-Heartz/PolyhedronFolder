@@ -8,6 +8,7 @@
 
 #include "GLUtils.hpp"
 
+inline size_t key(int i,int j) {return (size_t) i << 32 | (unsigned int) j;}
 
 class PolyUtils {
 public:
@@ -15,23 +16,23 @@ public:
     static MeshObject<Vertex> ConstrPolyFace(int n);
 
     float GetDefaultAngle(const int& n,const int& m) const {
-        return defaultAngles.at(std::make_pair(n,m));
+        return defaultAngles.at(key(n,m));
     }
 
     float GetDefaultAngle(const std::pair<int,int>& n) const {
-        return defaultAngles.at(n);
+        return defaultAngles.at(key(n.first,n.second));
     }
 
     void SetDefaultAngle(const int& n, const int& m, float angle) {
-        defaultAngles[std::make_pair(n,m)] = angle;
+        defaultAngles[key(n,m)] = angle;
     }
 
     void SetDefaultAngle(const std::pair<int,int>& n, float a) {
-        defaultAngles.at(n) = a;
+        defaultAngles[key(n.first,n.second)] = a;
     }
 
 private:
-    std::unordered_map<std::pair<int,int>, float> defaultAngles;
+    std::unordered_map<size_t, float> defaultAngles;
 };
 
 

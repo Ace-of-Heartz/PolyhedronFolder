@@ -7,16 +7,19 @@
 
 #include "Polyhedron.h"
 
+namespace PolyhedronFolder {
+    class PolyParser {
 
-class PolyParser {
+    public:
+        PolyParser();
 
-  public:
-    PolyParser();
+        static PolyhedronFace* parse(const std::string& filename);
 
-    static AbstractPolyhedronFace* parse(const std::string& filename);
+    private:
+    };
+}
 
-  private:
-};
+
 
 
 
