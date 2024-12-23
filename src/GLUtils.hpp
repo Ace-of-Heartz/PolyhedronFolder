@@ -87,6 +87,15 @@ struct MeshObject
 {
     std::vector<VertexT> vertexArray;
     std::vector<GLuint>  indexArray;
+	void operator+=(MeshObject<VertexT> other) {
+		vertexArray.insert(vertexArray.cend(), other.vertexArray.begin(), other.vertexArray.end());
+
+
+		auto temp = other.indexArray;
+		uint n = indexArray.size();
+		std::transform(temp.begin(), temp.end(), std::back_inserter(indexArray), [&](auto i) { return i + n / 3 + 2; });
+
+	}
 };
 
 struct OGLObject

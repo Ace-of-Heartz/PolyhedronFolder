@@ -32,7 +32,11 @@ namespace PolyhedronFolder {
             defaultAngles[key(n.first,n.second)] = a;
         }
 
-        static float CalcDefaultAngleBetween(uint n, uint m,uint o);
+        static glm::mat4 CalcTransformMtx(uint toEdge,uint n);
+
+        static glm::vec3 CalcCentroid(const std::vector<glm::vec3> &vertices, float s);
+
+        static float CalcDefaultAngleBetween(float n, float m, float o);
 
     private:
         static std::unordered_map<size_t, float> defaultAngles;

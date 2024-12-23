@@ -45,18 +45,42 @@ Mesh PolyUtils::ConstrPolyFace(int n) {
     }
 
     return Mesh{vertexArray, indexArray};
-
 }
 
-float PolyUtils::CalcDefaultAngleBetween(uint n, uint m, uint o) {
-    float n_f,m_f,o_f;
-    n_f = n;
-    m_f = m;
-    o_f = o;
+glm::mat4 PolyUtils::CalcTransformMtx(uint toEdge, uint n) {
+    glm::mat4 mtx = glm::mat4(1.0f);
 
-    float nAngle = (1.f - 2.f / n_f) * glm::pi<float>();
-    float mAngle = (1.f - 2.f / m_f) * glm::pi<float>();
-    float oAngle = (1.f - 2.f /  o_f) * glm::pi<float>();
+    // TODO: Calculate centroid
+    // TODO: Transform parent object centroid to origin
+    // TODO: Transform new object by the same vector
+    // TODO: Rotate new object around the origin (Y axis)
+    // TODO: Transform back
+    mtx = glm::scale(glm::vec3(-1.0f,1.0f,1.0f)) * mtx;
+
+    for (int i = 0; i < toEdge - 1; ++i) {
+
+    }
+
+    return mtx;
+}
+
+glm::vec3 PolyUtils::CalcCentroid(const std::vector<glm::vec3> &vertices, const float s) {
+    auto result = glm::vec3(0.0f);
+
+    const float N = vertices.size();
+    const float area = 1.0f/4.0f * N * s * s * glm::cos(glm::pi<float>()/N) / glm::sin(glm::pi<float>()/N);
+    for (auto &v : vertices) {
+        result += v;
+    }
+    return result / area;
+}
+
+
+float PolyUtils::CalcDefaultAngleBetween(float n, float m, float o) {
+
+    const float nAngle = (1.f - 2.f / n) * glm::pi<float>();
+    const float mAngle = (1.f - 2.f / m) * glm::pi<float>();
+    const float oAngle = (1.f - 2.f /  o) * glm::pi<float>();
 
     return glm::pi<float>() - glm::acos(
         (glm::cos(oAngle) - glm::cos(nAngle) * glm::cos(mAngle)) / (glm::sin(nAngle) * glm::sin(mAngle))
