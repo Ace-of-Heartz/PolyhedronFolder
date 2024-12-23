@@ -2,9 +2,8 @@
 // Created by ace on 2024.12.18..
 //
 
-#include <iostream>
 #include "PolyUtils.h"
-
+#include <iostream>
 #ifndef GLM_ENABLE_EXPERIMENTAL
 #define GLM_ENABLE_EXPERIMENTAL
 #endif
@@ -36,7 +35,6 @@ Mesh PolyUtils::ConstrPolyFace(int n) {
         auto uv = glm::vec2( (std::sin(2.f * glm::pi<float>() * i_f / n_f) + 1.0f) / 2.0f ,(std::cos(2.f * glm::pi<float>() * i_f / n_f) + 1.0f) / 2.0f);
 
         V = Vertex{pos, glm::vec3(0.0f, 1.0f, 0.0f),uv};
-
         vertexArray[i] = V;
     }
 
@@ -44,10 +42,6 @@ Mesh PolyUtils::ConstrPolyFace(int n) {
         indexArray[i*3] = 0;
         indexArray[i*3+1] = i+1;
         indexArray[i*3+2] = i+2;
-    }
-
-    for(auto & i : indexArray) {
-        std::cout << i << std::endl;
     }
 
     return Mesh{vertexArray, indexArray};

@@ -15,21 +15,20 @@ namespace PolyhedronFolder {
     public:
         PolyUtils() = delete;
         static MeshObject<Vertex> ConstrPolyFace(int n);
-        static std::initializer_list<VertexAttributeDescriptor> GetVertexAttributeDescriptors();
 
-        static float GetDefaultAngle(const int& n,const int& m) {
+        static float GetDefaultAngle(const uint& n,const uint& m) {
             return defaultAngles.at(key(n,m));
         }
 
-        static float GetDefaultAngle(const std::pair<int,int>& n) {
+        static float GetDefaultAngle(const std::pair<uint,uint>& n) {
             return defaultAngles.at(key(n.first,n.second));
         }
 
-        static void SetDefaultAngle(const int& n, const int& m, float angle) {
+        static void SetDefaultAngle(const uint& n, const uint& m, float angle) {
             defaultAngles[key(n,m)] = angle;
         }
 
-        static void SetDefaultAngle(const std::pair<int,int>& n, float a) {
+        static void SetDefaultAngle(const std::pair<uint,uint>& n, float a) {
             defaultAngles[key(n.first,n.second)] = a;
         }
 
