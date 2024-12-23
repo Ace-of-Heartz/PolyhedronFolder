@@ -48,11 +48,18 @@ Mesh PolyUtils::ConstrPolyFace(int n) {
 
 }
 
-std::initializer_list<VertexAttributeDescriptor>  PolyUtils::GetVertexAttributeDescriptors() {
-    return{
-		{ 0, offsetof( Vertex, position ), 3, GL_FLOAT },
-		{ 1, offsetof( Vertex, normal   ), 3, GL_FLOAT },
-		{ 2, offsetof( Vertex, texcoord ), 2, GL_FLOAT },
-	};
+float PolyUtils::CalcDefaultAngleBetween(uint n, uint m, uint o) {
+    float n_f,m_f,o_f;
+    n_f = n;
+    m_f = m;
+    o_f = o;
+
+    float nAngle = (1.f - 2.f / n_f) * glm::pi<float>();
+    float mAngle = (1.f - 2.f / m_f) * glm::pi<float>();
+    float oAngle = (1.f - 2.f /  o_f) * glm::pi<float>();
+
+    return glm::pi<float>() - glm::acos(
+        (glm::cos(oAngle) - glm::cos(nAngle) * glm::cos(mAngle)) / (glm::sin(nAngle) * glm::sin(mAngle))
+    );
 }
 

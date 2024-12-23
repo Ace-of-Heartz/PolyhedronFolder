@@ -32,6 +32,8 @@ namespace PolyhedronFolder {
             defaultAngles[key(n.first,n.second)] = a;
         }
 
+        static float CalcDefaultAngleBetween(uint n, uint m,uint o);
+
     private:
         static std::unordered_map<size_t, float> defaultAngles;
     };
