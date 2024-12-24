@@ -22,11 +22,21 @@ PolyhedronFace::PolyhedronFace(
     const uint n,
     const float pivotVal,
     const glm::mat4 &tfMat,
-    PolyhedronFace* parent
+    PolyhedronFace* parent,
+    bool isRoot
     )
-: numberOfEdges(n), pivotVal(pivotVal), localTransformMtx(tfMat), parent(parent), mesh(PolyUtils::ConstrPolyFace(n)) {
+: numberOfEdges(n), pivotVal(pivotVal), localTransformMtx(tfMat), parent(parent), mesh(PolyUtils::ConstrPolyFace(n,1)) {
     children.resize(n);
-
+    // if (isRoot) {
+    //     std::vector<glm::vec3> vertices;
+    //     vertices.reserve(mesh.vertexArray.size());
+    //     for (int i = 0; i < n; i++) {
+    //         vertices.push_back(mesh.vertexArray[i].position);
+    //     }
+    //
+    //     glm::vec3 centroid = PolyUtils::CalcCentroid(vertices,1);
+    //     localTransformMtx = glm::translate(glm::mat4(1), -centroid);
+    // }
 }
 
 PolyhedronFace::~PolyhedronFace() {
@@ -34,15 +44,15 @@ PolyhedronFace::~PolyhedronFace() {
 
 void PolyhedronFace::Add(uint edge, uint n, float pivotVal) {
 
-    auto tfMat = PolyUtils::CalcTransformMtx(edge,n);
+    auto tfMat = PolyUtils::CalcTransformMtx(edge,n,numberOfEdges);
 
-    children[edge] = new PolyhedronFace(n,pivotVal,tfMat,this); //TODO: Calc transform matrix ....
+    children[edge] = new PolyhedronFace(n,pivotVal,tfMat,this,false); //TODO: Calc transform matrix ....
 }
 
 PolyhedronFace * PolyhedronFace::Push(uint edge, const uint n, float pivotVal) {
-    auto tfMat = PolyUtils::CalcTransformMtx(edge,n);
+    auto tfMat = PolyUtils::CalcTransformMtx(edge,n,numberOfEdges);
 
-    children[edge] = new PolyhedronFace(n,pivotVal,tfMat,this); // TODO: Calc transform matrix ....
+    children[edge] = new PolyhedronFace(n,pivotVal,tfMat,this,false); // TODO: Calc transform matrix ....
     return children[edge];
 }
 
@@ -54,7 +64,7 @@ Mesh PolyhedronFace::GetTransformedMesh(const float t, const glm::mat4& parentTr
     std::vector<Vertex> transformedVertices;
     transformedVertices.reserve(mesh.vertexArray.size());
 
-    tfMat = parentTransformMtx * localTransformMtx * tfMat;
+    tfMat = parentTransformMtx * localTransformMtx  * tfMat;
 
     for(auto &v : mesh.vertexArray) {
         auto tfPos = tfMat * glm::vec4(v.position,1.0);
@@ -94,8 +104,18 @@ glm::mat4 PolyhedronFace::GetFoldTransformationMatrix(const float t) const {
 
     if(parent) {
         const float radian = std::lerp(0.f,pivotVal,t);
-        const auto rotationMtx = glm::rotate(glm::mat4(1.0f), radian, glm::vec3(0.0f, 0.0f, 1.0f));
-        result = rotationMtx * result;
+
+        float R = 1.0f / (2.0f * glm::sin(glm::pi<float>()/numberOfEdges));
+
+
+        result = glm::translate(glm::mat4(1.0f),glm::vec3(0.0f,0.0f,-R)) * result;
+        result = glm::rotate(glm::mat4(1.0f),((1.0f - 2.0f / float(numberOfEdges)) * half_pi<float>() ),glm::vec3(0.0f,1.0f,0.0)) * result;
+
+        result = glm::rotate(glm::mat4(1.0f), -radian, glm::vec3(0.0f, 0.0f, 1.0f)) * result;
+        result = glm::rotate(glm::mat4(1.0f),(-(1.0f - 2.0f / float(numberOfEdges)) * half_pi<float>() ),glm::vec3(0.0f,1.0f,0.0)) * result;
+
+        result = glm::translate(glm::mat4(1.0f),glm::vec3(0.0f,0.0f,R)) * result;
+
     }
 
     return result;

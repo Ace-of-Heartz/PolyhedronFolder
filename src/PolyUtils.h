@@ -14,7 +14,7 @@ namespace PolyhedronFolder {
     class PolyUtils {
     public:
         PolyUtils() = delete;
-        static MeshObject<Vertex> ConstrPolyFace(int n);
+        static MeshObject<Vertex> ConstrPolyFace(int n, float s);
 
         static float GetDefaultAngle(const uint& n,const uint& m) {
             return defaultAngles.at(key(n,m));
@@ -32,7 +32,7 @@ namespace PolyhedronFolder {
             defaultAngles[key(n.first,n.second)] = a;
         }
 
-        static glm::mat4 CalcTransformMtx(uint toEdge,uint n);
+        static glm::mat4 CalcTransformMtx(uint toEdge,float n,float parentN);
 
         static glm::vec3 CalcCentroid(const std::vector<glm::vec3> &vertices, float s);
 

@@ -6,6 +6,7 @@
 #define POLYHEDRON_H
 
 #include <optional>
+#include <glm/gtc/constants.hpp>
 
 #include "GLUtils.hpp"
 
@@ -14,7 +15,7 @@ namespace PolyhedronFolder {
 
     class PolyhedronFace {
     public:
-        PolyhedronFace(uint n,float pivotVal = 0.0f, const glm::mat4 &tfMat = glm::mat4(1.0f),PolyhedronFace* parent = nullptr);
+        PolyhedronFace(uint n,float pivotVal = 0.0f, const glm::mat4 &tfMat = glm::mat4(1.0f),PolyhedronFace* parent = nullptr,bool isRoot = true);
         ~PolyhedronFace();
 
         void SetNumberOfEdges(uint numberOfEdges);
@@ -28,8 +29,8 @@ namespace PolyhedronFolder {
     private:
         friend class Polyhedron;
 
-        void Add(uint edge,uint n, float pivotVal = 0.f);
-        PolyhedronFace* Push(uint edge,uint n, float pivotVal = 0.f);
+        void Add(uint edge,uint n, float pivotVal = glm::half_pi<float>());
+        PolyhedronFace* Push(uint edge,uint n, float pivotVal = glm::half_pi<float>());
         PolyhedronFace* Pop() {return parent;};
 
         Mesh mesh;
@@ -55,12 +56,12 @@ namespace PolyhedronFolder {
             isDirty = true;
         }
 
-        void Add(uint edge,uint n, float pivot_val = 0.f) {
+        void Add(uint edge,uint n, float pivot_val = glm::half_pi<float>()) {
             active->Add(edge,n,pivot_val);
             isDirty = true;
         }
 
-        void Push(uint edge,uint n, float pivot_val = 0.f) {
+        void Push(uint edge,uint n, float pivot_val = glm::half_pi<float>()) {
             active = active->Push(edge,n,pivot_val);
             isDirty = true;
         }
