@@ -2,7 +2,8 @@
 
 #include <filesystem>
 #include <vector>
-
+#include <algorithm>
+#include <iostream>
 #include <GL/glew.h>
 #include <glm/glm.hpp>
 
@@ -87,6 +88,26 @@ struct MeshObject
 {
     std::vector<VertexT> vertexArray;
     std::vector<GLuint>  indexArray;
+
+	MeshObject operator+(MeshObject other) {
+		std::vector<VertexT> newVertexArray = vertexArray;
+		std::vector<GLuint>  newIndexArray = indexArray;
+
+		newVertexArray.insert(newVertexArray.end(), other.vertexArray.begin(), other.vertexArray.end());
+		newIndexArray.insert(newIndexArray.end(), other.indexArray.begin(), other.indexArray.end());
+
+		return { newVertexArray, newIndexArray };
+	}
+
+	void operator+=(MeshObject<VertexT> other) {
+		vertexArray.insert(vertexArray.cend(), other.vertexArray.begin(), other.vertexArray.end());
+
+		auto offset = *std::max_element(indexArray.begin(), indexArray.end()) + 1;
+		auto temp = other.indexArray;
+		uint n = indexArray.size();
+		std::transform(temp.begin(), temp.end(), std::back_inserter(indexArray), [&](auto i) { return i + offset; });
+
+	}
 };
 
 struct OGLObject

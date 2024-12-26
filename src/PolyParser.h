@@ -13,9 +13,12 @@ namespace PolyhedronFolder {
     public:
         PolyParser();
 
-        static PolyhedronFace* parse(const std::string& filename);
+        static void ParseFromFile(const std::string& filename,Polyhedron& polyhedron);
+        static void Parse(std::string& command,Polyhedron& polyhedron);
 
     private:
+
+
     };
 }
 

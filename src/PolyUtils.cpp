@@ -14,29 +14,31 @@ using namespace PolyhedronFolder;
 
 typedef struct MeshObject<Vertex> Mesh;
 
-Mesh PolyUtils::ConstrPolyFace(int n) {
 
-    float n_f = n;
-    float interiorAngle = glm::pi<float>() - (1.f - 2.f / n_f) * glm::pi<float>();
-
-    auto V = Vertex{glm::vec3(0.0, 0.0, 0.0), glm::vec3(0.0f, 1.0f, 0.0f),glm::vec2(0.5f,1.0f)}; //TODO: Normal + UV
+Mesh PolyUtils::ConstrPolyFace(int n,float s) {
 
     std::vector<Vertex> vertexArray;
     std::vector<uint> indexArray;
 
     vertexArray.resize(n);
     indexArray.resize((n - 2) * 3);
-    vertexArray[0] = V;
 
-    for (int i = 1; i < n; ++i) {
-        float i_f = i ;
+    const float N = n;
+    const float angleOfRotation = glm::two_pi<float>() / n;
+    const float radius = s / (2.0f * glm::sin(glm::pi<float>()/N));
+    float nth = 0;
+    Vertex V;
 
-        auto pos = V.position - glm::vec3( std::sin(interiorAngle * i_f ),0,std::cos(interiorAngle * i_f));
-        auto uv = glm::vec2( (std::sin(2.f * glm::pi<float>() * i_f / n_f) + 1.0f) / 2.0f ,(std::cos(2.f * glm::pi<float>() * i_f / n_f) + 1.0f) / 2.0f);
+    for (int i = 0; i < n; ++i) {
 
-        V = Vertex{pos, glm::vec3(0.0f, 1.0f, 0.0f),uv};
+        auto pos = glm::vec3(glm::sin(angleOfRotation * nth) * radius,0,glm::cos(angleOfRotation * nth) * radius);
+        auto uv = glm::vec2 ((glm::sin(glm::two_pi<float>() * nth/N) + 1.0f) / 2.0f, (glm::cos(glm::two_pi<float>() * nth / N) + 1.0f ) / 2.0f );
+
+        V = Vertex{pos, glm::vec3(0.0f,1.0f,0.0f),uv};
         vertexArray[i] = V;
+        nth += 1.0f;
     }
+
 
     for (int i = 0; i < (n - 2); i++) {
         indexArray[i*3] = 0;
@@ -45,18 +47,40 @@ Mesh PolyUtils::ConstrPolyFace(int n) {
     }
 
     return Mesh{vertexArray, indexArray};
-
 }
 
-float PolyUtils::CalcDefaultAngleBetween(uint n, uint m, uint o) {
-    float n_f,m_f,o_f;
-    n_f = n;
-    m_f = m;
-    o_f = o;
+glm::mat4 PolyUtils::CalcTransformMtx(uint toEdge, float n,float parentN) {
+    glm::mat4 mtx = glm::mat4(1.0f);
 
-    float nAngle = (1.f - 2.f / n_f) * glm::pi<float>();
-    float mAngle = (1.f - 2.f / m_f) * glm::pi<float>();
-    float oAngle = (1.f - 2.f /  o_f) * glm::pi<float>();
+    // TODO: Calculate centroid
+    // TODO: Transform parent object centroid to origin
+    // TODO: Transform new object by the same vector
+    // TODO: Rotate new object around the origin (Y axis)
+    // TODO: Transform back
+
+    float aParent = 1.0f / (2.0f * glm::tan(glm::pi<float>()/parentN));
+    float a = 1.0f / (2.0f * glm::tan(glm::pi<float>()/n));
+
+
+    float angleOfRotation = glm::two_pi<float>() / parentN;
+    float offset = angleOfRotation * 0.5f;
+
+    float diff = ((1.0f - 2.0f / parentN) - (1.0f - 2.f / n)) * glm::half_pi<float>();
+
+    mtx = glm::rotate(mtx,-diff,glm::vec3(0.0f,1.0f,0.0f));
+
+    mtx = glm::rotate(glm::mat4(1), angleOfRotation * toEdge, glm::vec3(0.0f, 1.0f, 0.0f)) * mtx;
+    mtx = glm::scale(glm::mat4(1),glm::vec3(-1.0f,1.0f,-1.0f)) * mtx;
+    mtx = glm::translate(glm::mat4(1), glm::vec3( ( a + aParent) * glm::sin(offset + angleOfRotation * toEdge), 0.0f, ( a + aParent) * glm::cos(offset + angleOfRotation * toEdge) ))  * mtx;
+
+    return mtx;
+}
+
+float PolyUtils::CalcDefaultAngleBetween(float n, float m, float o) {
+
+    const float nAngle = (1.f - 2.f / n) * glm::pi<float>();
+    const float mAngle = (1.f - 2.f / m) * glm::pi<float>();
+    const float oAngle = (1.f - 2.f / o) * glm::pi<float>();
 
     return glm::pi<float>() - glm::acos(
         (glm::cos(oAngle) - glm::cos(nAngle) * glm::cos(mAngle)) / (glm::sin(nAngle) * glm::sin(mAngle))
