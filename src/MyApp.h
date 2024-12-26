@@ -17,6 +17,10 @@
 #include "GLUtils.hpp"
 #include "Camera.h"
 #include "CameraManipulator.h"
+#include "Polyhedron.h"
+#include "Light.h"
+
+using namespace PolyhedronFolder;
 
 struct SUpdateInfo
 {
@@ -33,8 +37,14 @@ public:
 	bool Init();
 	void Clean();
 
+	void LoadTexture(const std::string& filename);
+
 	void Update( const SUpdateInfo& );
 	void Render();
+	void RenderPolyhedron();
+	void RenderObject();
+	void RenderAxis();
+
 	void RenderGUI();
 
 	void KeyboardDown(const SDL_KeyboardEvent&);
@@ -69,11 +79,15 @@ protected:
 	GLuint m_programAxis = 0;
 
 	// Fényforrás- ...
-	glm::vec4 m_lightPos = glm::vec4( 0.0f, 1.0f, 0.0f, 0.0f );
 
-	glm::vec3 m_La = glm::vec3( 0.125f );
-	glm::vec3 m_Ld = glm::vec3(1.0, 1.0, 1.0 );
-	glm::vec3 m_Ls = glm::vec3(1.0, 1.0, 1.0 );
+	Light m_light1 = Light(
+		glm::vec4( 0.0f, 1.0f, 1.0f, 0.0f ),glm::vec3( 0.125f ),glm::vec3(1.0, 1.0, 1.0 ),glm::vec3(0.0, 0.0, 0.0 )
+		);
+	Light m_light2 = Light(
+		glm::vec4( 0.0f, -1.0f, -1.0f, 0.0f ),glm::vec3( 0.125f ),glm::vec3(1.0, 1.0, 1.0 ),glm::vec3(0.0, 0.0, 0.0 )
+		);
+
+
 
 	float m_lightConstantAttenuation    = 1.0;
 	float m_lightLinearAttenuation      = 0.0;
@@ -86,6 +100,8 @@ protected:
 
 	float m_Shininess = 1.0;
 
+
+
 	// Shaderek inicializálása, és törtlése
 	void InitShaders();
 	void CleanShaders();
@@ -95,6 +111,9 @@ protected:
 
 	OGLObject m_PolyhedronPoly = {};
 	OGLObject m_PolyhedronObject = {};
+
+	// Polyhedron
+	Polyhedron m_Polyhedron;
 
 
 	// Geometria inicializálása, és törtlése

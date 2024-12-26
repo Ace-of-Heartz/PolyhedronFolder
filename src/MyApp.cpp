@@ -6,9 +6,16 @@
 
 #include <imgui.h>
 
+#include <iostream>
 #include <string>
 #include <array>
 #include <algorithm>
+
+#include "PolyParser.h"
+#include "PolyUtils.h"
+
+
+using namespace PolyhedronFolder;
 
 CMyApp::CMyApp()
 {
@@ -56,15 +63,22 @@ void CMyApp::CleanShaders()
 }
 
 
-
 void CMyApp::InitGeometry()
 {
-
+	if (m_Polyhedron.IsDirty() || true) {
+		const std::initializer_list<VertexAttributeDescriptor> vertexAttribList = {
+			{ 0, offsetof( Vertex, position ), 3, GL_FLOAT },
+			{ 1, offsetof( Vertex, normal   ), 3, GL_FLOAT },
+			{ 2, offsetof( Vertex, texcoord ), 2, GL_FLOAT },
+		};
+		auto polyMeshCPU = m_Polyhedron.GetTransformedMesh(m_camera.GetEye());
+		m_PolyhedronPoly = CreateGLObjectFromMesh(polyMeshCPU,vertexAttribList);
+	}
 }
 
 void CMyApp::CleanGeometry()
 {
-	CleanOGLObject( m_PolyhedronObject );
+	CleanOGLObject( m_PolyhedronPoly );
 }
 
 void CMyApp::InitTextures()
@@ -77,17 +91,25 @@ void CMyApp::InitTextures()
 	glSamplerParameteri( m_SamplerID, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR );
 	glSamplerParameteri( m_SamplerID, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
 
-	// diffuse texture
-
-	ImageRGBA PolyhedronImage = ImageFromFile( "Assets/wood.jpg" );
+	ImageRGBA PolyhedronImage = ImageFromFile( "Assets/wood.jpg");
 
 	glCreateTextures( GL_TEXTURE_2D, 1, &m_PolyhedronTextureID );
 	glTextureStorage2D( m_PolyhedronTextureID, NumberOfMIPLevels( PolyhedronImage ), GL_RGBA8, PolyhedronImage.width, PolyhedronImage.height );
 	glTextureSubImage2D( m_PolyhedronTextureID, 0, 0, 0, PolyhedronImage.width, PolyhedronImage.height, GL_RGBA, GL_UNSIGNED_BYTE, PolyhedronImage.data() );
 
 	glGenerateTextureMipmap( m_PolyhedronTextureID );
-
 }
+
+void CMyApp::LoadTexture(const std::string& filename) {
+	ImageRGBA PolyhedronImage = ImageFromFile( filename );
+
+	glCreateTextures( GL_TEXTURE_2D, 1, &m_PolyhedronTextureID );
+	glTextureStorage2D( m_PolyhedronTextureID, NumberOfMIPLevels( PolyhedronImage ), GL_RGBA8, PolyhedronImage.width, PolyhedronImage.height );
+	glTextureSubImage2D( m_PolyhedronTextureID, 0, 0, 0, PolyhedronImage.width, PolyhedronImage.height, GL_RGBA, GL_UNSIGNED_BYTE, PolyhedronImage.data() );
+
+	glGenerateTextureMipmap( m_PolyhedronTextureID );
+}
+
 
 void CMyApp::CleanTextures()
 {
@@ -106,9 +128,8 @@ bool CMyApp::Init()
 	InitGeometry();
 	InitTextures();
 
-	//
-	// egyéb inicializálás
-	//
+	glPointSize( 16.0f );
+	glLineWidth( 4.0f );
 
 	glEnable(GL_CULL_FACE); // kapcsoljuk be a hátrafelé néző lapok eldobását
 	glCullFace(GL_BACK);    // GL_BACK: a kamerától "elfelé" néző lapok, GL_FRONT: a kamera felé néző lapok
@@ -123,8 +144,6 @@ bool CMyApp::Init()
 
 	m_cameraManipulator.SetCamera( &m_camera );
 
-
-
 	return true;
 }
 
@@ -137,6 +156,8 @@ void CMyApp::Clean()
 
 void CMyApp::Update( const SUpdateInfo& updateInfo )
 {
+
+	InitGeometry();
 	m_ElapsedTimeInSec = updateInfo.ElapsedTimeInSec;
 
 	m_cameraManipulator.Update( updateInfo.DeltaTimeInSec );
@@ -146,11 +167,16 @@ void CMyApp::SetLightingUniforms( GLuint program, float Shininess, glm::vec3 Ka,
 {
 	// - Fényforrások beállítása
 	glProgramUniform3fv( program, ul( program, "cameraPos" ), 1, glm::value_ptr( m_camera.GetEye() ) );
-	glProgramUniform4fv( program, ul( program, "lightPos" ),  1, glm::value_ptr( m_lightPos ) );
 
-	glProgramUniform3fv( program, ul( program, "La" ),		 1, glm::value_ptr( m_La ) );
-	glProgramUniform3fv( program, ul( program, "Ld" ),		 1, glm::value_ptr( m_Ld ) );
-	glProgramUniform3fv( program, ul( program, "Ls" ),		 1, glm::value_ptr( m_Ls ) );
+	glProgramUniform4fv( program, ul( program, "lightPosDir1" ),  1, glm::value_ptr( m_light1.GetPosDir()) );
+	glProgramUniform3fv( program, ul( program, "La1" ),		 1, glm::value_ptr( m_light1.GetAmbientComp() ) );
+	glProgramUniform3fv( program, ul( program, "Ld1" ),		 1, glm::value_ptr( m_light1.GetDiffuseComp()) );
+	glProgramUniform3fv( program, ul( program, "Ls1" ),		 1, glm::value_ptr( m_light1.GetSpecularComp()) );
+
+	glProgramUniform4fv( program, ul( program, "lightPosDir2" ),  1, glm::value_ptr( m_light2.GetPosDir()) );
+	glProgramUniform3fv( program, ul( program, "La2" ),		 1, glm::value_ptr( m_light2.GetAmbientComp() ) );
+	glProgramUniform3fv( program, ul( program, "Ld2" ),		 1, glm::value_ptr( m_light2.GetDiffuseComp()) );
+	glProgramUniform3fv( program, ul( program, "Ls2" ),		 1, glm::value_ptr( m_light2.GetSpecularComp()) );
 
 	glProgramUniform1f( program, ul( program, "lightConstantAttenuation"	 ), m_lightConstantAttenuation );
 	glProgramUniform1f( program, ul( program, "lightLinearAttenuation"	 ), m_lightLinearAttenuation   );
@@ -164,90 +190,75 @@ void CMyApp::SetLightingUniforms( GLuint program, float Shininess, glm::vec3 Ka,
 	glProgramUniform1f( program, ul( program, "Shininess" ),	Shininess );
 }
 
-void CMyApp::Render()
-{
-	// töröljük a frampuffert (GL_COLOR_BUFFER_BIT)...
-	// ... és a mélységi Z puffert (GL_DEPTH_BUFFER_BIT)
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-	//
-	// Suzanne
-	//
-
-	// - Uniform paraméterek
-	// view és projekciós mátrix
+void CMyApp::RenderPolyhedron() {
 	glProgramUniformMatrix4fv( m_programID, ul( m_programID,"viewProj"), 1, GL_FALSE, glm::value_ptr( m_camera.GetViewProj() ) );
 
-	glm::mat4 matWorld = glm::mat4( 1.0f );
+	auto matWorld = glm::mat4( 1.0f );
 
 	glProgramUniformMatrix4fv( m_programID, ul( m_programID,"world" ),    1, GL_FALSE, glm::value_ptr( matWorld ) );
 	glProgramUniformMatrix4fv( m_programID, ul( m_programID,"worldIT" ),  1, GL_FALSE, glm::value_ptr( glm::transpose( glm::inverse( matWorld ) ) ) );
 
 	SetLightingUniforms( m_programID, m_Shininess, m_Ka, m_Kd, m_Ks );
 
-	// - textúraegységek beállítása
 	glProgramUniform1i( m_programID, ul( m_programID,"texImage" ), 0 );
 
-	// - Textúrák beállítása, minden egységre külön
 	glBindTextureUnit( 0, m_PolyhedronTextureID );
 	glBindSampler( 0, m_SamplerID );
 
-    // - VAO
-	glBindVertexArray( m_PolyhedronObject.vaoID );
+	glBindVertexArray( m_PolyhedronPoly.vaoID );
 
-    // - Program
 	glUseProgram( m_programID );
 
-	// Rajzolási parancs kiadása
-	glDrawElements( GL_TRIANGLES,    
-					m_PolyhedronObject.count,
+	glDrawElements( GL_TRIANGLES,
+					m_PolyhedronPoly.count,
 					GL_UNSIGNED_INT,
 					nullptr );
+}
 
-	// shader kikapcsolasa
+void CMyApp::RenderObject() {
+
+}
+
+void CMyApp::RenderAxis() {
+	glm::mat4 matWorld = glm::translate(glm::vec3(0,0,0));
+
+	glDisable(GL_DEPTH_TEST);
+
+	glProgramUniform1f(m_programAxis, ul(m_programAxis, "mult"), 0.5f);
+
+	glProgramUniformMatrix4fv(m_programAxis, ul(m_programAxis, "viewProj"), 1, GL_FALSE, glm::value_ptr(m_camera.GetViewProj()));
+	glProgramUniformMatrix4fv(m_programAxis, ul(m_programAxis, "world"), 1, GL_FALSE, glm::value_ptr(matWorld));
+
+	glUseProgram(m_programAxis);
+
+	glDrawArrays(GL_LINES, 0, 6);
+
+	glEnable(GL_DEPTH_TEST);
+}
+
+
+void CMyApp::Render()
+{
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	RenderPolyhedron();
+	RenderObject();
+
+	RenderAxis();
+
+
+
+
 	glUseProgram( 0 );
 
-	// - Textúrák kikapcsolása, minden egységre külön
 	glBindTextureUnit( 0, 0 );
 	glBindSampler( 0, 0 );
 
-	// VAO kikapcsolása
 	glBindVertexArray( 0 );
-
-	// glm::mat4 matWorld2 = glm::translate(pos1);
-	//
-	// glDisable(GL_DEPTH_TEST);
-	//
-	// glProgramUniform1f(m_programAxis, ul(m_programAxis, "mult"), 0.5f);
-	//
-	// glProgramUniformMatrix4fv(m_programAxis, ul(m_programAxis, "viewProj"), 1, GL_FALSE, glm::value_ptr(m_camera.GetViewProj()));
-	// glProgramUniformMatrix4fv(m_programAxis, ul(m_programAxis, "world"), 1, GL_FALSE, glm::value_ptr(matWorld));
-	//
-	// glUseProgram(m_programAxis);
-	//
-	// glDrawArrays(GL_LINES, 0, 6);
-	//
-	// glEnable(GL_DEPTH_TEST);
-	//
-	// matWorld2 = glm::translate(pos2);
-	//
-	// glDisable(GL_DEPTH_TEST);
-	//
-	// glProgramUniform1f(m_programAxis, ul(m_programAxis, "mult"), 0.5f);
-	//
-	// glProgramUniformMatrix4fv(m_programAxis, ul(m_programAxis, "viewProj"), 1, GL_FALSE, glm::value_ptr(m_camera.GetViewProj()));
-	// glProgramUniformMatrix4fv(m_programAxis, ul(m_programAxis, "world"), 1, GL_FALSE, glm::value_ptr(matWorld2));
-	//
-	// glUseProgram(m_programAxis);
-	//
-	// glDrawArrays(GL_LINES, 0, 6);
-	//
-	// glEnable(GL_DEPTH_TEST);
 }
 
 void CMyApp::RenderGUI()
 {
-	//ImGui::ShowDemoWindow();
 	if ( ImGui::Begin( "Lighting settings" ) )
 	{		
 		ImGui::InputFloat("Shininess", &m_Shininess, 0.1f, 1.0f, "%.1f" );
@@ -269,7 +280,7 @@ void CMyApp::RenderGUI()
 
 		{
 			static auto lightPosXZ = glm::vec2( 0.0f );
-			lightPosXZ = glm::vec2( m_lightPos.x, m_lightPos.z );
+			lightPosXZ = glm::vec2( m_light1.GetPosDir().x, m_light1.GetPosDir().z );
 			if ( ImGui::SliderFloat2( "Light Position XZ", glm::value_ptr( lightPosXZ ), -1.0f, 1.0f ) )
 			{
 				float lightPosL2 = lightPosXZ.x * lightPosXZ.x + lightPosXZ.y * lightPosXZ.y;
@@ -279,12 +290,57 @@ void CMyApp::RenderGUI()
 					lightPosL2 = 1.0f;
 				}
 
-				m_lightPos.x = lightPosXZ.x;
-				m_lightPos.z = lightPosXZ.y;
-				m_lightPos.y = sqrtf( 1.0f - lightPosL2 );
+				auto newLightPos = glm::vec4( lightPosXZ.x,sqrtf( 1.0f - lightPosL2 ), lightPosXZ.y,0.f );
+				m_light1.SetPosDir(newLightPos);
 			}
-			ImGui::LabelText( "Light Position Y", "%f", m_lightPos.y );
+			ImGui::LabelText( "Light Position Y", "%f", m_light1.GetPosDir().y );
 		}
+	}
+	ImGui::End();
+
+	if ( ImGui::Begin("PolygonFolder")) {
+
+		if(ImGui::BeginChild("Controls")) {
+			static bool animate = false;
+			if(ImGui::Checkbox("Animate?", &animate)) {
+
+			}
+
+			static float t;
+			if(ImGui::SliderFloat("Animation state",&t,0,1)) {
+				animate = false;
+				m_Polyhedron.SetFoldVal(t);
+				std::cout << t << std::endl;
+			}
+
+			static ImVector<char> buffer = ImVector<char>();
+
+			ImGui::InputTextWithHint("Input Command","ADD 2 4...",reinterpret_cast<char*>(&buffer),1024,ImGuiInputTextFlags_CallbackResize | ImGuiInputTextFlags_CharsUppercase,
+				[](ImGuiInputTextCallbackData* data) {
+					auto buffer = static_cast<ImVector<char> *>(data->UserData);
+					//IM_ASSERT(buffer->begin() == data->Buf);
+					buffer->resize(data->BufSize);
+					data->Buf = buffer->begin();
+					return 0;
+				}, (void*)&buffer
+ 			);
+			if(ImGui::Button("Run Command") || ImGui::IsKeyPressed(ImGuiKey_Enter)) {
+				std::string temp = buffer.Data;
+				PolyParser::Parse(temp,m_Polyhedron);
+			}
+
+
+
+		}
+		ImGui::EndChild();
+
+		if (ImGui::BeginChild("View")) {
+
+		}
+		ImGui::EndChild();
+
+
+
 	}
 	ImGui::End();
 
@@ -357,9 +413,27 @@ void CMyApp::Resize(int _w, int _h)
 // Le nem kezelt, egzotikus esemény kezelése
 // https://wiki.libsdl.org/SDL2/SDL_Event
 
+#include <iostream>
 void CMyApp::OtherEvent( const SDL_Event& ev )
 {
+	if ( ev.type == SDL_DROPFILE || ev.type == SDL_DROPTEXT) {
 
+		std::string filename = std::string(ev.drop.file);
+
+		if (filename.rfind(".poly") != std::string::npos) {
+			PolyParser::ParseFromFile(filename,m_Polyhedron);
+
+		}
+		else if (filename.rfind(".ojb") != std::string::npos) {
+			auto mesh = ObjParser::parse(filename);
+			// auto descriptors = {VertexAttributeDescriptor{}}
+			// CreateGLObjectFromMesh(mesh);
+		}
+		else if (filename.rfind(".png") != std::string::npos) {
+			LoadTexture(filename);
+		}
+		SDL_free(ev.drop.file);
+	}
 }
 
 
