@@ -6,6 +6,7 @@
 #define POLYPARSER_H
 
 #include "Polyhedron.h"
+#include "PolyUtils.h"
 
 namespace PolyhedronFolder {
     class PolyParser {
@@ -17,8 +18,8 @@ namespace PolyhedronFolder {
         static void Parse(std::string& command,Polyhedron& polyhedron);
 
     private:
-
-
+        inline static uint lastNAdd = -1;
+        inline static uint lastNPush = -1;
     };
 }
 

@@ -50,38 +50,64 @@ void PolyParser::Parse(string &str, Polyhedron &polyhedron) {
 
     uint n,m,o;
     if (tokens[0] == "START") {
-        polyhedron.Start(stoi(tokens[1]));
+        n = stoi(tokens[1]);
+        polyhedron.Start(n);
+        lastNAdd = lastNPush = n;
+
     } else if (tokens[0] == "ADD") {
-        if (tokens.size() <= 3)
-            polyhedron.Add(stoi(tokens[1]), stoi(tokens[2]));
-        else
-            polyhedron.Add(stoi(tokens[1]), stoi(tokens[2]), stof(tokens[3]));
+
+        if (tokens.size() <= 2) {
+            polyhedron.Add(stoi(tokens[1]), lastNAdd,PolyUtils::GetDefaultAngle(lastNPush,lastNAdd));
+        }
+        else if (tokens.size() <= 3) {
+            n = stoi(tokens[2]);
+            polyhedron.Add(stoi(tokens[1]), n,PolyUtils::GetDefaultAngle(lastNPush,n));
+            lastNAdd = n;
+        }
+        else {
+            n = stoi(tokens[2]);
+            polyhedron.Add(stoi(tokens[1]), n, stof(tokens[3]));
+            lastNAdd = n;
+        }
     } else if (tokens[0] == "PUSH") {
-        if (tokens.size() <= 3)
-            polyhedron.Push(stoi(tokens[1]), stoi(tokens[2]));
-        else
-            polyhedron.Push(stoi(tokens[1]), stoi(tokens[2]), stof(tokens[3]));
+        if (tokens.size() <= 2) {
+            polyhedron.Push(stoi(tokens[1]), lastNAdd,PolyUtils::GetDefaultAngle(lastNPush,lastNAdd));
+        }
+        else if (tokens.size() <= 3) {
+            n = stoi(tokens[2]);
+            polyhedron.Push(stoi(tokens[1]), n, PolyUtils::GetDefaultAngle(lastNPush,n));
+            lastNPush = lastNAdd = n;
+
+        }
+        else {
+            n = stoi(tokens[2]);
+            polyhedron.Push(stoi(tokens[1]), n, stof(tokens[3]));
+            lastNPush = lastNAdd = n;
+        }
     } else if (tokens[0] == "POP") {
         polyhedron.Pop();
     } else if (tokens[0] == "PIVOT") {
-        // PolyUtils::SetDefaultAngle(stoi(tokens[1]),stoi(tokens[2]),stof(tokens[3]));
+        PolyUtils::SetDefaultAngle(stoi(tokens[1]),stoi(tokens[2]),stof(tokens[3]));
     } else if (tokens[0] == "PIVOT_POLY") {
         n = stoi(tokens[1]);
         m = stoi(tokens[2]);
         o = stoi(tokens[3]);
-        // PolyUtils::SetDefaultAngle(n,m,PolyUtils::CalcDefaultAngleBetween(n,m,o));
-    } else if (tokens[0] == "PIVOTE_VERTEX") {
+        PolyUtils::SetDefaultAngle(n,m,PolyUtils::CalcDefaultAngleBetween(n,m,o));
+    } else if (tokens[0] == "PIVOT_VERTEX") {
         n = stoi(tokens[1]);
         m = stoi(tokens[2]);
         o = stoi(tokens[3]);
-        // PolyUtils::SetDefaultAngle(n,m,PolyUtils::CalcDefaultAngleBetween(n,m,o));
-        // PolyUtils::SetDefaultAngle(n,o,PolyUtils::CalcDefaultAngleBetween(n,o,m));
-        // PolyUtils::SetDefaultAngle(m,o,PolyUtils::CalcDefaultAngleBetween(m,o,n));
+        PolyUtils::SetDefaultAngle(n,m,PolyUtils::CalcDefaultAngleBetween(n,m,o));
+        PolyUtils::SetDefaultAngle(n,o,PolyUtils::CalcDefaultAngleBetween(n,o,m));
+        PolyUtils::SetDefaultAngle(m,o,PolyUtils::CalcDefaultAngleBetween(m,o,n));
     } else if (tokens[0] == "RESET") {
         polyhedron.Reset();
     } else if (tokens[0] == "SAVE") {
 
-    } else {
+    } else if (str[0] == '#') {
+        //SKIP
+    }
+    else {
         std::cerr << "Unrecognised command: "<< tokens[0] << std::endl;
     }
 
