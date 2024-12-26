@@ -27,36 +27,35 @@ PolyhedronFace::PolyhedronFace(
     )
 : numberOfEdges(n), pivotVal(pivotVal), localTransformMtx(tfMat), parent(parent), mesh(PolyUtils::ConstrPolyFace(n,1)) {
     children.resize(n);
-    // if (isRoot) {
-    //     std::vector<glm::vec3> vertices;
-    //     vertices.reserve(mesh.vertexArray.size());
-    //     for (int i = 0; i < n; i++) {
-    //         vertices.push_back(mesh.vertexArray[i].position);
-    //     }
-    //
-    //     glm::vec3 centroid = PolyUtils::CalcCentroid(vertices,1);
-    //     localTransformMtx = glm::translate(glm::mat4(1), -centroid);
-    // }
 }
 
 PolyhedronFace::~PolyhedronFace() {
 }
 
 void PolyhedronFace::Add(uint edge, uint n, float pivotVal) {
+    //TODO: Make this nicer
+    if (edge == 0 && parent != nullptr || children[edge] != nullptr) {
+        throw std::invalid_argument("PolyhedronFace::Add ");
+    }
 
     auto tfMat = PolyUtils::CalcTransformMtx(edge,n,numberOfEdges);
 
     children[edge] = new PolyhedronFace(n,pivotVal,tfMat,this,false); //TODO: Calc transform matrix ....
 }
 
-PolyhedronFace * PolyhedronFace::Push(uint edge, const uint n, float pivotVal) {
+PolyhedronFace* PolyhedronFace::Push(uint edge, const uint n, float pivotVal) {
+
+    if (edge == 0 && parent != nullptr || children[edge] != nullptr) {
+        throw std::invalid_argument("PolyhedronFace::Push ");
+    }
+
     auto tfMat = PolyUtils::CalcTransformMtx(edge,n,numberOfEdges);
 
     children[edge] = new PolyhedronFace(n,pivotVal,tfMat,this,false); // TODO: Calc transform matrix ....
     return children[edge];
 }
 
-Mesh PolyhedronFace::GetTransformedMesh(const float t, const glm::mat4& parentTransformMtx) {
+Mesh PolyhedronFace::GetTransformedMesh(const float t, const glm::mat4& parentTransformMtx, const glm::vec3 cameraPos) {
     glm::mat4 tfMat = glm::mat4(1);
     if (parent)
         tfMat = GetFoldTransformationMatrix(t);
@@ -65,21 +64,48 @@ Mesh PolyhedronFace::GetTransformedMesh(const float t, const glm::mat4& parentTr
     transformedVertices.reserve(mesh.vertexArray.size());
 
     tfMat = parentTransformMtx * localTransformMtx  * tfMat;
+    auto tfMatTransposeI = glm::transpose(glm::inverse(tfMat));
 
+    bool isFacingAway;
     for(auto &v : mesh.vertexArray) {
+
         auto tfPos = tfMat * glm::vec4(v.position,1.0);
-        transformedVertices.push_back({ glm::vec3(tfPos.x,tfPos.y,tfPos.z),v.normal,v.texcoord});
+        auto tfNorm = normalize(tfMatTransposeI * glm::vec4(v.normal,1.0));
+
+        //TODO: Transform normals
+
+        auto posToCamera = cameraPos - glm::vec3(tfPos.x,tfPos.y,tfPos.z);
+        isFacingAway = glm::dot(posToCamera,glm::vec3(tfNorm.x,tfNorm.y,tfNorm.z)) < 0.0f;
+
+        if(isFacingAway) {
+            tfNorm *= -1.0f;
+        }
+
+        transformedVertices.push_back({ glm::vec3(tfPos.x,tfPos.y,tfPos.z),glm::vec3(tfNorm.x,tfNorm.y,tfNorm.z),v.texcoord});
+
     }
 
-    auto mMesh = Mesh{transformedVertices,mesh.indexArray};
+
+    Mesh mMesh;
+    if (isFacingAway) {
+
+        auto revIndexArray = mesh.indexArray;
+        std::ranges::reverse(revIndexArray);
+
+        mMesh = Mesh(transformedVertices,revIndexArray);
+    }
+    else {
+        mMesh = Mesh{transformedVertices,mesh.indexArray};
+    }
 
     for(auto &c : children) {
         if (c) {
-            auto cMesh = c->GetTransformedMesh(t,tfMat);
+            auto cMesh = c->GetTransformedMesh(t,tfMat,cameraPos);
             mMesh += cMesh;
         }
     }
 
+#ifdef DEBUG
     if (!parent) {
         for(auto &i : mMesh.vertexArray) {
             std::cout << i.position.x << " " << i.position.y << " " << i.position.z << std::endl;
@@ -89,7 +115,7 @@ Mesh PolyhedronFace::GetTransformedMesh(const float t, const glm::mat4& parentTr
             std:: cout << i << std::endl;
         }
     }
-
+#endif
 
     return mMesh;
 }
@@ -123,11 +149,11 @@ glm::mat4 PolyhedronFace::GetFoldTransformationMatrix(const float t) const {
 
 Polyhedron::Polyhedron() : isDirty(true) {};
 
-Mesh Polyhedron::GetTransformedMesh()  {
+Mesh Polyhedron::GetTransformedMesh(const glm::vec3 cameraPos)  {
     auto res = Mesh();
 
     if (root) {
-        res = root->GetTransformedMesh(foldVal,glm::mat4(1));
+        res = root->GetTransformedMesh(foldVal,glm::mat4(1),cameraPos);
     }
     isDirty = false;
 

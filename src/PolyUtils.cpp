@@ -14,6 +14,7 @@ using namespace PolyhedronFolder;
 
 typedef struct MeshObject<Vertex> Mesh;
 
+
 Mesh PolyUtils::ConstrPolyFace(int n,float s) {
 
     std::vector<Vertex> vertexArray;
@@ -60,21 +61,14 @@ glm::mat4 PolyUtils::CalcTransformMtx(uint toEdge, float n,float parentN) {
     float aParent = 1.0f / (2.0f * glm::tan(glm::pi<float>()/parentN));
     float a = 1.0f / (2.0f * glm::tan(glm::pi<float>()/n));
 
-    // float RParent = 1.0f / (2.0f * glm::sin(glm::pi<float>()/parentN));
-    // float R = 1.0f / (2.0f * glm::sin(glm::pi<float>()/n));
 
     float angleOfRotation = glm::two_pi<float>() / parentN;
     float offset = angleOfRotation * 0.5f;
 
     float diff = ((1.0f - 2.0f / parentN) - (1.0f - 2.f / n)) * glm::half_pi<float>();
 
-    //mtx = glm::translate(mtx, -glm::vec3(0.0f,0.0f,R));
-
     mtx = glm::rotate(mtx,-diff,glm::vec3(0.0f,1.0f,0.0f));
 
-
-    //TODO: FIX rotation
-    //TODO: Even + Odd fitting
     mtx = glm::rotate(glm::mat4(1), angleOfRotation * toEdge, glm::vec3(0.0f, 1.0f, 0.0f)) * mtx;
     mtx = glm::scale(glm::mat4(1),glm::vec3(-1.0f,1.0f,-1.0f)) * mtx;
     mtx = glm::translate(glm::mat4(1), glm::vec3( ( a + aParent) * glm::sin(offset + angleOfRotation * toEdge), 0.0f, ( a + aParent) * glm::cos(offset + angleOfRotation * toEdge) ))  * mtx;
@@ -82,22 +76,11 @@ glm::mat4 PolyUtils::CalcTransformMtx(uint toEdge, float n,float parentN) {
     return mtx;
 }
 
-glm::vec3 PolyUtils::CalcCentroid(const std::vector<glm::vec3> &vertices, const float s) {
-    auto result = glm::vec3(0.0f);
-
-    const float N = vertices.size();
-    for (auto &v : vertices) {
-        result += v;
-    }
-    return result / N;
-}
-
-
 float PolyUtils::CalcDefaultAngleBetween(float n, float m, float o) {
 
     const float nAngle = (1.f - 2.f / n) * glm::pi<float>();
     const float mAngle = (1.f - 2.f / m) * glm::pi<float>();
-    const float oAngle = (1.f - 2.f /  o) * glm::pi<float>();
+    const float oAngle = (1.f - 2.f / o) * glm::pi<float>();
 
     return glm::pi<float>() - glm::acos(
         (glm::cos(oAngle) - glm::cos(nAngle) * glm::cos(mAngle)) / (glm::sin(nAngle) * glm::sin(mAngle))

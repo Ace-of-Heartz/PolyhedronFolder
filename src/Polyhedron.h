@@ -22,7 +22,7 @@ namespace PolyhedronFolder {
         void SetPivotVal(float pivotVal);
         void SetTransformMatrix(glm::mat4 transformMatrix);
 
-        [[nodiscard]] Mesh GetTransformedMesh(float t, const glm::mat4&);
+        [[nodiscard]] Mesh GetTransformedMesh(float t, const glm::mat4&, const glm::vec3 cameraPos);
         [[nodiscard]] glm::mat4 GetFoldTransformationMatrix(float t) const;
         [[nodiscard]] unsigned int GetEdgeCount() const {return numberOfEdges;}
 
@@ -48,7 +48,7 @@ namespace PolyhedronFolder {
     public:
         Polyhedron();
 
-        Mesh GetTransformedMesh();
+        Mesh GetTransformedMesh(const glm::vec3 cameraPos);
 
         void Start(uint n) {
             root = new PolyhedronFace(n);
@@ -57,6 +57,7 @@ namespace PolyhedronFolder {
         }
 
         void Add(uint edge,uint n, float pivot_val = glm::half_pi<float>()) {
+            std::cout << pivot_val << std::endl;
             active->Add(edge,n,pivot_val);
             isDirty = true;
         }
