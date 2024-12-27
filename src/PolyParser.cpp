@@ -3,112 +3,176 @@
 //
 
 #include "PolyParser.h"
-#include "PolyUtils.h"
-#include <fstream>
-#include <iostream>
 
-using namespace PolyhedronFolder;
+#include <charconv>
+#include <iostream>
+#include <fstream>
+
+#include "InMemoryTokenizer.h"
+#include "PolyUtils.h"
+
 
 using namespace std;
+using namespace PolyhedronFolder;
 
-void PolyParser::ParseFromFile(const string &fileName, Polyhedron &polyhedron) {
+
+constexpr unsigned int str2int(const string& str, const int h = 0)
+{
+    return !(str.size() >= h) ? 5381 : (str2int(str, h+1) * 33) ^ str[h];
+}
+
+void PolyParser::SetDataFromFile(const string &fileName) {
+    error_code ec;
+    size_t fileSize = filesystem::file_size(fileName, ec);
+
+    if (ec) throw (EXC_FILENOTFOUND);
+
+    polyRawData.reserve(fileSize);
 
     ifstream polyFileStrm(fileName,ios::binary);
 
     if(!polyFileStrm.is_open()) {
-        throw std::runtime_error("File could not be opened");
+        throw EXC_FILENOTFOUND;
     }
 
-    string lineBuffer;
-    lineBuffer.resize(1024);
-    while(polyFileStrm.good() && !polyFileStrm.eof()) {
-        polyFileStrm.getline(lineBuffer.data(), lineBuffer.size());
+    polyFileStrm.read(polyRawData.data(), fileSize);
+    tokenizer.SetData(polyRawData.data(),fileSize);
 
-        Parse(lineBuffer, polyhedron);
-    }
+    // while(tokenizer) {
+    //     cout << tokenizer.NextToken() << endl;
+    // }
 }
 
-constexpr unsigned int str2int(const char* str, int h = 0)
-{
-    return !str[h] ? 5381 : (str2int(str, h+1) * 33) ^ str[h];
+void PolyParser::SetDataFromInput(const string &input) {
+    tokenizer.SetData(input.data(),input.size());
 }
 
-void PolyParser::Parse(string &str, Polyhedron &polyhedron) {
+void PolyParser::Parse(Polyhedron &polyhedron) {
 
-    string temp = str;
+    while (tokenizer) {
+        string_view token = tokenizer.NextToken();
+        cout << token << std::endl;
 
-    vector<string> tokens;
-    std::cout << str << std::endl;
+        if (token[0] == '#') {
+            tokenizer.ToNextLine();
+            continue;
+        }
 
-    bool finished = false;
-    while (!finished) {
-        finished = temp.find(' ') == string::npos;
-        tokens.push_back(temp.substr(0, temp.find(' ')));
-        temp.erase(0, temp.find(' ') + 1);
 
+
+        auto command = string(token);
+        switch(str2int(command)) {
+            case str2int("START"): {
+                uint n;
+
+                string_view nT = tokenizer.NextToken();
+                from_chars(nT.data(), nT.data() + nT.size(), n);
+
+                polyhedron.Start(n);
+                lastNPush = lastNAdd = n;
+            }break;
+            case str2int("ADD"): {
+                uint edge, n;
+                float pivot;
+
+                string_view edgeT = tokenizer.NextToken(true);
+                from_chars(edgeT.data(), edgeT.data() + edgeT.size(), edge);
+
+                std::string_view nT = tokenizer.NextToken(true);
+                if(nT.empty()) n = lastNAdd;
+                else from_chars(nT.data(), nT.data() + nT.size(), n);
+
+                std::string_view pivotT = tokenizer.NextToken(true);
+                if(pivotT.empty()) pivot = PolyUtils::GetDefaultAngle(lastNPush,n);
+                else from_chars(pivotT.data(), pivotT.data() + pivotT.size(), pivot);
+
+                polyhedron.Add(edge,n,pivot);
+                lastNAdd = n;
+
+            }break;
+            case str2int("PUSH"): {
+                uint edge, n;
+                float pivot;
+
+                string_view edgeT = tokenizer.NextToken(true);
+                from_chars(edgeT.data(), edgeT.data() + edgeT.size(), edge);
+
+                std::string_view nT = tokenizer.NextToken(true);
+                if(nT.empty()) n = lastNAdd;
+                else from_chars(nT.data(), nT.data() + nT.size(), n);
+
+                std::cout << n << std::endl;
+                std::string_view pivotT = tokenizer.NextToken(true);
+                if(pivotT.empty()) pivot = PolyUtils::GetDefaultAngle(lastNPush,n);
+                else from_chars(pivotT.data(), pivotT.data() + pivotT.size(), pivot);
+
+                polyhedron.Push(edge,n,pivot);
+                lastNPush = lastNAdd = n;
+
+            }break;
+            case str2int("POP"): {
+                polyhedron.Pop();
+            }break;
+            case str2int("PIVOT"): {
+                uint n, m;
+                float pivot;
+                string_view nT = tokenizer.NextToken(true);
+                from_chars(nT.data(), nT.data() + nT.size(), n);
+
+                string_view mT = tokenizer.NextToken(true);
+                from_chars(mT.data(), mT.data() + mT.size(), m);
+
+                string_view pivotT = tokenizer.NextToken(true);
+                from_chars(pivotT.data(), pivotT.data() + pivotT.size(), pivot);
+
+                PolyUtils::SetDefaultAngle(n,m,pivot);
+
+            } break;
+            case str2int("PIVOT_POLY"): {
+                uint n,m,o;
+                string_view nT = tokenizer.NextToken(true);
+                from_chars(nT.data(), nT.data() + nT.size(), n);
+
+                string_view mT = tokenizer.NextToken(true);
+                from_chars(mT.data(), mT.data() + mT.size(), m);
+
+                string_view oT = tokenizer.NextToken(true);
+                from_chars(oT.data(), oT.data() + oT.size(), o);
+
+                PolyUtils::SetDefaultAngle(n,m,PolyUtils::CalcDefaultAngleBetween(n,m,o));
+
+            } break;
+            case str2int("PIVOT_VERTEX"): {
+                uint n,m,o;
+                string_view nT = tokenizer.NextToken(true);
+                from_chars(nT.data(), nT.data() + nT.size(), n);
+
+                string_view mT = tokenizer.NextToken(true);
+                from_chars(mT.data(), mT.data() + mT.size(), m);
+
+                string_view oT = tokenizer.NextToken(true);
+                from_chars(oT.data(), oT.data() + oT.size(), o);
+
+                PolyUtils::SetDefaultAngle(n,m,PolyUtils::CalcDefaultAngleBetween(n,m,o));
+                PolyUtils::SetDefaultAngle(o,n,PolyUtils::CalcDefaultAngleBetween(o,n,m));
+                PolyUtils::SetDefaultAngle(m,o,PolyUtils::CalcDefaultAngleBetween(m,o,n));
+            } break;
+            case str2int("RESET"): {
+                polyhedron.Reset();
+            } break;
+            case str2int("SAVE_TO_POLY"): {
+                //TODO
+            } break;
+            case str2int("SAVE_TO_OBJ"): {
+                //TODO
+            } break;
+            default:
+                std::cout << "Not a valid command: " << token << std::endl;
+            break;
+
+        }
     }
-
-    uint n,m,o;
-    if (tokens[0] == "START") {
-        n = stoi(tokens[1]);
-        polyhedron.Start(n);
-        lastNAdd = lastNPush = n;
-
-    } else if (tokens[0] == "ADD") {
-
-        if (tokens.size() <= 2) {
-            polyhedron.Add(stoi(tokens[1]), lastNAdd,PolyUtils::GetDefaultAngle(lastNPush,lastNAdd));
-        }
-        else if (tokens.size() <= 3) {
-            n = stoi(tokens[2]);
-            polyhedron.Add(stoi(tokens[1]), n,PolyUtils::GetDefaultAngle(lastNPush,n));
-            lastNAdd = n;
-        }
-        else {
-            n = stoi(tokens[2]);
-            polyhedron.Add(stoi(tokens[1]), n, stof(tokens[3]));
-            lastNAdd = n;
-        }
-    } else if (tokens[0] == "PUSH") {
-        if (tokens.size() <= 2) {
-            polyhedron.Push(stoi(tokens[1]), lastNAdd,PolyUtils::GetDefaultAngle(lastNPush,lastNAdd));
-        }
-        else if (tokens.size() <= 3) {
-            n = stoi(tokens[2]);
-            polyhedron.Push(stoi(tokens[1]), n, PolyUtils::GetDefaultAngle(lastNPush,n));
-            lastNPush = lastNAdd = n;
-
-        }
-        else {
-            n = stoi(tokens[2]);
-            polyhedron.Push(stoi(tokens[1]), n, stof(tokens[3]));
-            lastNPush = lastNAdd = n;
-        }
-    } else if (tokens[0] == "POP") {
-        polyhedron.Pop();
-    } else if (tokens[0] == "PIVOT") {
-        PolyUtils::SetDefaultAngle(stoi(tokens[1]),stoi(tokens[2]),stof(tokens[3]));
-    } else if (tokens[0] == "PIVOT_POLY") {
-        n = stoi(tokens[1]);
-        m = stoi(tokens[2]);
-        o = stoi(tokens[3]);
-        PolyUtils::SetDefaultAngle(n,m,PolyUtils::CalcDefaultAngleBetween(n,m,o));
-    } else if (tokens[0] == "PIVOT_VERTEX") {
-        n = stoi(tokens[1]);
-        m = stoi(tokens[2]);
-        o = stoi(tokens[3]);
-        PolyUtils::SetDefaultAngle(n,m,PolyUtils::CalcDefaultAngleBetween(n,m,o));
-        PolyUtils::SetDefaultAngle(n,o,PolyUtils::CalcDefaultAngleBetween(n,o,m));
-        PolyUtils::SetDefaultAngle(m,o,PolyUtils::CalcDefaultAngleBetween(m,o,n));
-    } else if (tokens[0] == "RESET") {
-        polyhedron.Reset();
-    } else if (tokens[0] == "SAVE") {
-
-    } else if (str[0] == '#') {
-        //SKIP
-    }
-    else {
-        std::cerr << "Unrecognised command: "<< tokens[0] << std::endl;
-    }
-
+    polyRawData.clear();
 }
+
+
