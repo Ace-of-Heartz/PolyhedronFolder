@@ -326,7 +326,8 @@ void CMyApp::RenderGUI()
  			);
 			if(ImGui::Button("Run Command") || ImGui::IsKeyPressed(ImGuiKey_Enter)) {
 				std::string temp = buffer.Data;
-				PolyParser::Parse(temp,m_Polyhedron);
+				PolyParser::SetDataFromInput(temp);
+				PolyParser::Parse(m_Polyhedron);
 			}
 
 
@@ -421,7 +422,9 @@ void CMyApp::OtherEvent( const SDL_Event& ev )
 		std::string filename = std::string(ev.drop.file);
 
 		if (filename.rfind(".poly") != std::string::npos) {
-			PolyParser::ParseFromFile(filename,m_Polyhedron);
+			m_Polyhedron.Reset();
+			PolyParser::SetDataFromFile(filename);
+			PolyParser::Parse(m_Polyhedron);
 
 		}
 		else if (filename.rfind(".ojb") != std::string::npos) {
