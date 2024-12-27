@@ -10,61 +10,9 @@
 #include <glm/gtx/norm.hpp>
 #include <glm/gtc/constants.hpp>
 
+#include <InMemoryTokenizer.h>
+
 using namespace std;
-
-class InMemoryTokenizer
-{
-public:
-	InMemoryTokenizer() = default;
-	void SetData( const char* ptr, size_t Length ) noexcept;
-	std::string_view NextToken( bool onlySameLine = false ) noexcept;
-	void ToNextLine() noexcept;
-	operator bool() const noexcept;
-private:
-	const char* currentPtr = nullptr;
-	const char* endPtr = nullptr;
-};
-
-void InMemoryTokenizer::SetData( const char* ptr, size_t Length ) noexcept
-{
-	this->currentPtr = ptr;
-	this->endPtr = ptr + Length;
-}
-
-std::string_view InMemoryTokenizer::NextToken( bool onlySameLine ) noexcept
-{
-	for ( ;currentPtr < endPtr 
-			&& std::isspace(static_cast<unsigned char>(*currentPtr) ); ++currentPtr )
-	{
-		if ( onlySameLine && *currentPtr == '\n' )
-		{
-			return std::string_view();
-		}
-	}
-	const char* tPtr = currentPtr;
-	std::size_t tLength = 0;
-
-	while ( currentPtr < endPtr 
-			&& !std::isspace(static_cast<unsigned char>(*currentPtr) ) )
-	{
-		currentPtr++;
-		tLength++;
-	}
-
-	return std::string_view( tPtr, tLength );
-}
-
-void InMemoryTokenizer::ToNextLine() noexcept
-{
-	while ( currentPtr < endPtr && *currentPtr != '\n' )
-		currentPtr++;
-	currentPtr++;
-}
-
-InMemoryTokenizer::operator bool() const noexcept
-{
-	return currentPtr < endPtr;
-}
 
 constexpr unsigned short From2Char( const char ch1, const char ch2)
 {
