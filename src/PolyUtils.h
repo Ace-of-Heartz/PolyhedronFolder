@@ -9,7 +9,7 @@
 
 #include "GLUtils.hpp"
 
-inline size_t key(int i,int j) {return (size_t) i << 32 | (unsigned int) j;}
+inline size_t key(uint i,uint j) {return (size_t) i << 32 | (unsigned int) j;}
 
 namespace PolyhedronFolder {
 
@@ -19,33 +19,44 @@ namespace PolyhedronFolder {
         static MeshObject<Vertex> ConstrPolyFace(int n, float s);
 
         static float GetDefaultAngle(const uint& n,const uint& m) {
-            if (defaultAngles.contains(key(n,m))) {
-                return defaultAngles[key(n,m)];
-            }
-            else if (defaultAngles.contains(key(m,n))) {
-                return defaultAngles.contains(key(m,n));
-            } else {
-                std::cerr << "No default angle specified for " << n << " and " << m << " polygons!" << std::endl;
-            }
+
+            auto keyVal = n <= m ? key(n,m) : key(m,n);
+
+            if (!defaultAngles.contains(keyVal))
+                throw std::runtime_error("No default angle!");
+
+            return defaultAngles[keyVal];
+
         }
 
         static float GetDefaultAngle(const std::pair<uint,uint>& n) {
-            if (defaultAngles.contains(key(n.first,n.second))) {
-                return defaultAngles[key(n.first,n.second)];
+
+            auto keyVal = n.first <= n.second ? key(n.first,n.second) : key(n.second,n.first);
+
+            if (!defaultAngles.contains(keyVal)) {
+                throw std::runtime_error("No default angle!");
             }
-            else if (defaultAngles.contains(key(n.second,n.first))) {
-                return defaultAngles.contains(key(n.second,n.first));
-            } else {
-                std::cerr << "No default angle specified for " << n.first << " and " << n.second << " polygons!" << std::endl;
-            }
+            return defaultAngles[keyVal];
         }
 
         static void SetDefaultAngle(const uint& n, const uint& m, float angle) {
-            defaultAngles.insert(std::make_pair(key(n,m),angle));
+
+            auto keyVal = n <= m ? key(n,m) : key(m,n);
+
+            if (defaultAngles.contains(keyVal))
+                defaultAngles.erase(keyVal);
+
+            defaultAngles.insert(std::make_pair(keyVal,angle));
         }
 
         static void SetDefaultAngle(const std::pair<uint,uint>& n, float a) {
-            defaultAngles.insert(std::make_pair(key(n.first,n.second),a));
+
+            auto keyVal = n.first <= n.second ? key(n.first,n.second) : key(n.second,n.first);
+
+            if (defaultAngles.contains(keyVal))
+                defaultAngles.erase(keyVal);
+
+            defaultAngles.insert(std::make_pair(keyVal,a));
         }
 
         static glm::mat4 CalcTransformMtx(uint toEdge,float n,float parentN);
