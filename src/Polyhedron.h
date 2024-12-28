@@ -80,6 +80,9 @@ namespace PolyhedronFolder {
 
         [[nodiscard]] bool IsDirty() const {return isDirty;}
         void SetFoldVal(float t) {foldVal = t; isDirty = true;}
+
+        [[nodiscard]] PolyhedronFace *GetActiveFace() const {return active;};
+        [[nodiscard]] PolyhedronFace *GetRoot() const {return root;}
     private:
         PolyhedronFace* root = nullptr;
         PolyhedronFace* active = nullptr;

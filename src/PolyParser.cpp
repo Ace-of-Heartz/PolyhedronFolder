@@ -69,7 +69,7 @@ void PolyParser::Parse(Polyhedron &polyhedron) {
                 from_chars(nT.data(), nT.data() + nT.size(), n);
 
                 polyhedron.Start(n);
-                lastNPush = lastNAdd = n;
+                lastNAdd = n;
             }break;
             case str2int("ADD"): {
                 uint edge, n;
@@ -83,7 +83,7 @@ void PolyParser::Parse(Polyhedron &polyhedron) {
                 else from_chars(nT.data(), nT.data() + nT.size(), n);
 
                 std::string_view pivotT = tokenizer.NextToken(true);
-                if(pivotT.empty()) pivot = PolyUtils::GetDefaultAngle(lastNPush,n);
+                if(pivotT.empty()) pivot = PolyUtils::GetDefaultAngle(polyhedron.GetActiveFace()->GetEdgeCount(),n);
                 else from_chars(pivotT.data(), pivotT.data() + pivotT.size(), pivot);
 
                 polyhedron.Add(edge,n,pivot);
@@ -103,11 +103,11 @@ void PolyParser::Parse(Polyhedron &polyhedron) {
 
                 std::cout << n << std::endl;
                 std::string_view pivotT = tokenizer.NextToken(true);
-                if(pivotT.empty()) pivot = PolyUtils::GetDefaultAngle(lastNPush,n);
+                if(pivotT.empty()) pivot = PolyUtils::GetDefaultAngle(polyhedron.GetActiveFace()->GetEdgeCount(),n);
                 else from_chars(pivotT.data(), pivotT.data() + pivotT.size(), pivot);
 
                 polyhedron.Push(edge,n,pivot);
-                lastNPush = lastNAdd = n;
+                lastNAdd = n;
 
             }break;
             case str2int("POP"): {
