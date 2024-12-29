@@ -48,7 +48,7 @@ namespace PolyhedronFolder {
     public:
         Polyhedron();
 
-        Mesh GetTransformedMesh(const glm::vec3 cameraPos);
+        Mesh GetTransformedMesh(const glm::mat4& baseTransform,const glm::vec3& cameraPos);
 
         void Start(uint n) {
             root = new PolyhedronFace(n);
