@@ -102,7 +102,7 @@ void main()
 	// A fragment normálvektora
 	// MINDIG normalizáljuk!
 
-	// normal vector debug:
-	//fs_out_col = vec4( normal, 1.0 );
-	fs_out_col = vec4((ComputeLightEffects(lightPosDir1,La1,Ld1,Ls1) + ComputeLightEffects(lightPosDir2,La2,Ld2,Ls2)),1.0)  * texture(texImage, vs_out_tex);
+	vec4 color = vec4(ComputeLightEffects(lightPosDir1,La1,Ld1,Ls1) + ComputeLightEffects(lightPosDir2,La2,Ld2,Ls2),1.0f);
+	//fs_out_col = vec4(normal,1.0f);
+	fs_out_col = color  * texture(texImage, vs_out_tex);
 }
