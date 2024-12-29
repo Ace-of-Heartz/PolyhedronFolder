@@ -5,7 +5,6 @@
 #ifndef POLYHEDRON_H
 #define POLYHEDRON_H
 
-#include <optional>
 #include <glm/gtc/constants.hpp>
 
 #include "GLUtils.hpp"
@@ -22,9 +21,20 @@ namespace PolyhedronFolder {
         void SetPivotVal(float pivotVal);
         void SetTransformMatrix(glm::mat4 transformMatrix);
 
-        [[nodiscard]] Mesh GetTransformedMesh(float t, const glm::mat4&, const glm::vec3 cameraPos);
+        [[nodiscard]] Mesh GetTransformedMesh(float t, const glm::mat4&, glm::vec3 cameraPos);
         [[nodiscard]] glm::mat4 GetFoldTransformationMatrix(float t) const;
         [[nodiscard]] unsigned int GetEdgeCount() const {return numberOfEdges;}
+        [[nodiscard]] bool IsSingleParent() const
+        {
+            bool res = false;
+            for (int i = 0; i < numberOfEdges  && !res; i++)
+            {
+                res = false || children[i] != nullptr;
+            }
+            return res;
+        }
+        [[nodiscard]] PolyhedronFace* GetNthChildren(const uint n) const { return children[n];}
+        [[nodiscard]] float GetPivotVal() const { return pivotVal;}
 
     private:
         friend class Polyhedron;
@@ -32,6 +42,8 @@ namespace PolyhedronFolder {
         void Add(uint edge,uint n, float pivotVal = glm::half_pi<float>());
         PolyhedronFace* Push(uint edge,uint n, float pivotVal = glm::half_pi<float>());
         PolyhedronFace* Pop() {return parent;};
+        void Remove(uint edge) const;
+
 
         Mesh mesh;
 

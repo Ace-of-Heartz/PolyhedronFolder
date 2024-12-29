@@ -10,10 +10,11 @@
 
 #include "InMemoryTokenizer.h"
 #include "PolyUtils.h"
+#include "PolySaver.h"
 
 
-using namespace std;
 using namespace PolyhedronFolder;
+using namespace std;
 
 
 constexpr unsigned int str2int(const string& str, const int h = 0)
@@ -37,10 +38,6 @@ void PolyParser::SetDataFromFile(const string &fileName) {
 
     polyFileStrm.read(polyRawData.data(), fileSize);
     tokenizer.SetData(polyRawData.data(),fileSize);
-
-    // while(tokenizer) {
-    //     cout << tokenizer.NextToken() << endl;
-    // }
 }
 
 void PolyParser::SetDataFromInput(const string &input) {
@@ -51,14 +48,11 @@ void PolyParser::Parse(Polyhedron &polyhedron) {
 
     while (tokenizer) {
         string_view token = tokenizer.NextToken();
-        cout << token << std::endl;
 
         if (token[0] == '#') {
             tokenizer.ToNextLine();
             continue;
         }
-
-
 
         auto command = string(token);
         switch(str2int(command)) {
@@ -161,7 +155,8 @@ void PolyParser::Parse(Polyhedron &polyhedron) {
                 polyhedron.Reset();
             } break;
             case str2int("SAVE_TO_POLY"): {
-                //TODO
+                string fileName = string(tokenizer.NextToken(true));
+                PolySaver::Save(fileName,polyhedron);
             } break;
             case str2int("SAVE_TO_OBJ"): {
                 //TODO

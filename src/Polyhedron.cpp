@@ -55,6 +55,16 @@ PolyhedronFace* PolyhedronFace::Push(uint edge, const uint n, float pivotVal) {
     return children[edge];
 }
 
+void PolyhedronFace::Remove(uint edge) const
+{
+    if (children[edge] != nullptr)
+    {
+        delete children[edge];
+    }
+}
+
+
+
 Mesh PolyhedronFace::GetTransformedMesh(
     const float t,
     const glm::mat4& parentTransformMtx,
@@ -125,14 +135,15 @@ glm::mat4 PolyhedronFace::GetFoldTransformationMatrix(const float t) const {
     if(parent) {
         const float radian = std::lerp(0.f,pivotVal,t);
 
-        float R = 1.0f / (2.0f * glm::sin(glm::pi<float>()/numberOfEdges));
+        const float N = numberOfEdges;
+        const float R = 1.0f / (2.0f * glm::sin(glm::pi<float>()/N));
 
 
         result = glm::translate(glm::mat4(1.0f),glm::vec3(0.0f,0.0f,-R)) * result;
-        result = glm::rotate(glm::mat4(1.0f),((1.0f - 2.0f / float(numberOfEdges)) * half_pi<float>() ),glm::vec3(0.0f,1.0f,0.0)) * result;
+        result = glm::rotate(glm::mat4(1.0f),((1.0f - 2.0f / N) * half_pi<float>() ),glm::vec3(0.0f,1.0f,0.0)) * result;
 
         result = glm::rotate(glm::mat4(1.0f), -radian, glm::vec3(0.0f, 0.0f, 1.0f)) * result;
-        result = glm::rotate(glm::mat4(1.0f),(-(1.0f - 2.0f / float(numberOfEdges)) * half_pi<float>() ),glm::vec3(0.0f,1.0f,0.0)) * result;
+        result = glm::rotate(glm::mat4(1.0f),(-(1.0f - 2.0f / N) * half_pi<float>() ),glm::vec3(0.0f,1.0f,0.0)) * result;
 
         result = glm::translate(glm::mat4(1.0f),glm::vec3(0.0f,0.0f,R)) * result;
 
