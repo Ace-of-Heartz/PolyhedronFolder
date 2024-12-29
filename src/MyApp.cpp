@@ -65,15 +65,15 @@ void CMyApp::CleanShaders()
 
 void CMyApp::InitGeometry()
 {
-	if (m_Polyhedron.IsDirty() || true) {
-		const std::initializer_list<VertexAttributeDescriptor> vertexAttribList = {
-			{ 0, offsetof( Vertex, position ), 3, GL_FLOAT },
-			{ 1, offsetof( Vertex, normal   ), 3, GL_FLOAT },
-			{ 2, offsetof( Vertex, texcoord ), 2, GL_FLOAT },
-		};
-		auto polyMeshCPU = m_Polyhedron.GetTransformedMesh(m_camera.GetEye());
-		m_PolyhedronPoly = CreateGLObjectFromMesh(polyMeshCPU,vertexAttribList);
-	}
+
+	const std::initializer_list<VertexAttributeDescriptor> vertexAttribList = {
+		{ 0, offsetof( Vertex, position ), 3, GL_FLOAT },
+		{ 1, offsetof( Vertex, normal   ), 3, GL_FLOAT },
+		{ 2, offsetof( Vertex, texcoord ), 2, GL_FLOAT },
+	};
+	auto polyMeshCPU = m_Polyhedron.GetTransformedMesh(m_baseTransformation,m_camera.GetEye());
+	m_PolyhedronPoly = CreateGLObjectFromMesh(polyMeshCPU,vertexAttribList);
+
 }
 
 void CMyApp::CleanGeometry()
@@ -156,6 +156,11 @@ void CMyApp::Clean()
 
 void CMyApp::Update( const SUpdateInfo& updateInfo )
 {
+
+	if (m_animate) {
+		m_currentFoldValue += updateInfo.DeltaTimeInSec * m_animationSpeed;
+		m_Polyhedron.SetFoldVal(abs(sin(m_currentFoldValue)));
+	}
 
 	InitGeometry();
 	m_ElapsedTimeInSec = updateInfo.ElapsedTimeInSec;
@@ -246,9 +251,6 @@ void CMyApp::Render()
 
 	RenderAxis();
 
-
-
-
 	glUseProgram( 0 );
 
 	glBindTextureUnit( 0, 0 );
@@ -260,57 +262,92 @@ void CMyApp::Render()
 void CMyApp::RenderGUI()
 {
 	if ( ImGui::Begin( "Lighting settings" ) )
-	{		
-		ImGui::InputFloat("Shininess", &m_Shininess, 0.1f, 1.0f, "%.1f" );
-		static float Kaf = 1.0f;
-		static float Kdf = 1.0f;
-		static float Ksf = 1.0f;
-		if ( ImGui::SliderFloat( "Ka", &Kaf, 0.0f, 1.0f ) )
-		{
-			m_Ka = glm::vec3( Kaf );
-		}
-		if ( ImGui::SliderFloat( "Kd", &Kdf, 0.0f, 1.0f ) )
-		{
-			m_Kd = glm::vec3( Kdf );
-		}
-		if ( ImGui::SliderFloat( "Ks", &Ksf, 0.0f, 1.0f ) )
-		{
-			m_Ks = glm::vec3( Ksf );
-		}
-
-		{
-			static auto lightPosXZ = glm::vec2( 0.0f );
-			lightPosXZ = glm::vec2( m_light1.GetPosDir().x, m_light1.GetPosDir().z );
-			if ( ImGui::SliderFloat2( "Light Position XZ", glm::value_ptr( lightPosXZ ), -1.0f, 1.0f ) )
-			{
-				float lightPosL2 = lightPosXZ.x * lightPosXZ.x + lightPosXZ.y * lightPosXZ.y;
-				if ( lightPosL2 > 1.0f ) // Ha kívülre esne a körön, akkor normalizáljuk
+	{
+		if (ImGui::BeginTabBar( "Lighting & Material" )) {
+			if (ImGui::BeginTabItem( "Material" )) {
+				ImGui::InputFloat("Shininess", &m_Shininess, 0.1f, 1.0f, "%.1f" );
+				static float Kaf = 1.0f;
+				static float Kdf = 1.0f;
+				static float Ksf = 1.0f;
+				if ( ImGui::SliderFloat( "Ka", &Kaf, 0.0f, 1.0f ) )
 				{
-					lightPosXZ /= sqrtf( lightPosL2 );
-					lightPosL2 = 1.0f;
+					m_Ka = glm::vec3( Kaf );
 				}
-
-				auto newLightPos = glm::vec4( lightPosXZ.x,sqrtf( 1.0f - lightPosL2 ), lightPosXZ.y,0.f );
-				m_light1.SetPosDir(newLightPos);
+				if ( ImGui::SliderFloat( "Kd", &Kdf, 0.0f, 1.0f ) )
+				{
+					m_Kd = glm::vec3( Kdf );
+				}
+				if ( ImGui::SliderFloat( "Ks", &Ksf, 0.0f, 1.0f ) )
+				{
+					m_Ks = glm::vec3( Ksf );
+				}
+			ImGui::EndTabItem();
 			}
-			ImGui::LabelText( "Light Position Y", "%f", m_light1.GetPosDir().y );
+
+			if (ImGui::BeginTabItem("1. Lighting")) {
+
+				{
+					static auto lightPosXZ = glm::vec2( 0.0f );
+					lightPosXZ = glm::vec2( m_light1.GetPosDir().x, m_light1.GetPosDir().z );
+					if ( ImGui::SliderFloat2( "Light Position XZ", glm::value_ptr( lightPosXZ ), -1.0f, 1.0f ) )
+					{
+						float lightPosL2 = lightPosXZ.x * lightPosXZ.x + lightPosXZ.y * lightPosXZ.y;
+						if ( lightPosL2 > 1.0f ) // Ha kívülre esne a körön, akkor normalizáljuk
+						{
+							lightPosXZ /= sqrtf( lightPosL2 );
+							lightPosL2 = 1.0f;
+						}
+
+						auto newLightPos = glm::vec4( lightPosXZ.x,sqrtf( 1.0f - lightPosL2 ), lightPosXZ.y,0.f );
+						m_light1.SetPosDir(newLightPos);
+					}
+					ImGui::LabelText( "Light Position Y", "%f", m_light1.GetPosDir().y );
+				}
+			ImGui::EndTabItem();
+			}
+
+			if (ImGui::BeginTabItem("2. Lighting")) {
+				{
+					static auto lightPosXZ = glm::vec2( 0.0f );
+					lightPosXZ = glm::vec2( m_light2.GetPosDir().x, m_light2.GetPosDir().z );
+					if ( ImGui::SliderFloat2( "Light Position XZ", glm::value_ptr( lightPosXZ ), -1.0f, 1.0f ) )
+					{
+						float lightPosL2 = lightPosXZ.x * lightPosXZ.x + lightPosXZ.y * lightPosXZ.y;
+						if ( lightPosL2 > 1.0f ) // Ha kívülre esne a körön, akkor normalizáljuk
+						{
+							lightPosXZ /= sqrtf( lightPosL2 );
+							lightPosL2 = 1.0f;
+						}
+
+						auto newLightPos = glm::vec4( lightPosXZ.x,sqrtf( 1.0f - lightPosL2 ), lightPosXZ.y,0.f );
+						m_light2.SetPosDir(newLightPos);
+					}
+					ImGui::LabelText( "Light Position Y", "%f", m_light2.GetPosDir().y );
+				}
+			ImGui::EndTabItem();
+			}
 		}
+		ImGui::EndTabBar();
+
 	}
 	ImGui::End();
 
-	if ( ImGui::Begin("PolygonFolder")) {
+	if ( ImGui::Begin("Polygon Settings")) {
 
 		if(ImGui::BeginChild("Controls")) {
-			static bool animate = false;
-			if(ImGui::Checkbox("Animate?", &animate)) {
+
+
+
+			if(ImGui::Checkbox("Animate?", &m_animate)) {
+			}
+
+			if (ImGui::SliderFloat("Animation Speed", &m_animationSpeed,0.001,10.0f)) {
 
 			}
 
-			static float t;
-			if(ImGui::SliderFloat("Animation state",&t,0,1)) {
-				animate = false;
-				m_Polyhedron.SetFoldVal(t);
-				std::cout << t << std::endl;
+			if(ImGui::SliderFloat("Animation state",&m_currentFoldValue,0,1)) {
+				m_animate = false;
+				m_Polyhedron.SetFoldVal(m_currentFoldValue);
 			}
 
 			static ImVector<char> buffer = ImVector<char>();
@@ -325,17 +362,17 @@ void CMyApp::RenderGUI()
 				}, (void*)&buffer
  			);
 			if(ImGui::Button("Run Command") || ImGui::IsKeyPressed(ImGuiKey_Enter)) {
-				std::string temp = buffer.Data;
-				PolyParser::SetDataFromInput(temp);
-				PolyParser::Parse(m_Polyhedron);
+				if (!buffer.empty()) {
+					std::string temp = buffer.Data;
+					PolyParser::SetDataFromInput(temp);
+					PolyParser::Parse(m_Polyhedron);
+				}
 			}
-
-
-
 		}
 		ImGui::EndChild();
 
 		if (ImGui::BeginChild("View")) {
+
 
 		}
 		ImGui::EndChild();

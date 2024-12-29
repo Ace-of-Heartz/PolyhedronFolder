@@ -113,7 +113,12 @@ protected:
 	OGLObject m_PolyhedronObject = {};
 
 	// Polyhedron
+	glm::mat4 m_baseTransformation = glm::mat4(1.0f);
 	Polyhedron m_Polyhedron;
+	bool m_animate = false;
+	float m_animationSpeed = 1.0f;
+	float m_currentFoldValue = 0.0f;
+
 
 
 	// Geometria inicializálása, és törtlése
