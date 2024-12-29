@@ -118,6 +118,7 @@ protected:
 	bool m_animate = false;
 	float m_animationSpeed = 1.0f;
 	float m_currentFoldValue = 0.0f;
+	float m_animationState = 0;
 
 
 

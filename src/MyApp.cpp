@@ -156,10 +156,22 @@ void CMyApp::Clean()
 
 void CMyApp::Update( const SUpdateInfo& updateInfo )
 {
-
 	if (m_animate) {
 		m_currentFoldValue += updateInfo.DeltaTimeInSec * m_animationSpeed;
-		m_Polyhedron.SetFoldVal(abs(sin(m_currentFoldValue)));
+		m_animationState += updateInfo.DeltaTimeInSec * m_animationSpeed;
+		if ( m_animationState >= 2.0f )
+		{
+			m_animationState = m_animationState - 2.0f;
+		}
+		else if (m_animationState >= 1.0f)
+		{
+			m_currentFoldValue = 2.0f - m_animationState;
+			m_Polyhedron.SetFoldVal(m_currentFoldValue);
+		} else
+		{
+			m_currentFoldValue = m_animationState;
+			m_Polyhedron.SetFoldVal(m_currentFoldValue);
+		}
 	}
 
 	InitGeometry();
@@ -345,8 +357,10 @@ void CMyApp::RenderGUI()
 
 			}
 
-			if(ImGui::SliderFloat("Animation state",&m_currentFoldValue,0,1)) {
+			if(ImGui::SliderFloat("Animation state",&m_currentFoldValue,0.0f,1.0f)) {
 				m_animate = false;
+
+				m_animationState = m_currentFoldValue;
 				m_Polyhedron.SetFoldVal(m_currentFoldValue);
 			}
 
