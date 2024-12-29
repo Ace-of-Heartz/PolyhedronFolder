@@ -86,19 +86,9 @@ struct ImageRGBA
 template<typename VertexT>
 struct MeshObject
 {
-    std::vector<VertexT> vertexArray;
-    std::vector<GLuint>  indexArray;
-
-	MeshObject operator+(MeshObject other) {
-		std::vector<VertexT> newVertexArray = vertexArray;
-		std::vector<GLuint>  newIndexArray = indexArray;
-
-		newVertexArray.insert(newVertexArray.end(), other.vertexArray.begin(), other.vertexArray.end());
-		newIndexArray.insert(newIndexArray.end(), other.indexArray.begin(), other.indexArray.end());
-
-		return { newVertexArray, newIndexArray };
-	}
-
+	MeshObject() = default;
+	MeshObject(const std::vector<VertexT>& vertexArray, const std::vector<GLuint>& indexArray, bool reverseOrder = false )
+	: vertexArray(vertexArray), indexArray(reverseOrder ? std::vector<GLuint>(indexArray.crbegin(),indexArray.crend()): indexArray) {}
 	void operator+=(MeshObject<VertexT> other) {
 		vertexArray.insert(vertexArray.cend(), other.vertexArray.begin(), other.vertexArray.end());
 
@@ -108,6 +98,9 @@ struct MeshObject
 		std::transform(temp.begin(), temp.end(), std::back_inserter(indexArray), [&](auto i) { return i + offset; });
 
 	}
+
+    std::vector<VertexT> vertexArray;
+    std::vector<GLuint>  indexArray;
 };
 
 struct OGLObject
