@@ -29,7 +29,7 @@ CMyApp::~CMyApp()
 
 void CMyApp::SetupDebugCallback()
 {
-	// engedélyezzük és állítsuk be a debug callback függvényt ha debug context-ben vagyunk 
+	// engedélyezzük és állítsuk be a debug callback függvényt ha debug context-ben vagyunk
 	GLint context_flags;
 	glGetIntegerv(GL_CONTEXT_FLAGS, &context_flags);
 	if (context_flags & GL_CONTEXT_FLAG_DEBUG_BIT) {
@@ -73,7 +73,7 @@ void CMyApp::InitGeometry()
 		{ 1, offsetof( Vertex, normal   ), 3, GL_FLOAT },
 		{ 2, offsetof( Vertex, texcoord ), 2, GL_FLOAT },
 	};
-	auto polyMeshCPU = m_Polyhedron.GetTransformedMesh(m_baseTransformation,m_camera.GetEye());
+	auto polyMeshCPU = m_Polyhedron.GetTransformedMesh(m_basePolyTransform,m_camera.GetEye());
 	m_PolyhedronPoly = CreateGLObjectFromMesh(polyMeshCPU,vertexAttribList);
 
 }

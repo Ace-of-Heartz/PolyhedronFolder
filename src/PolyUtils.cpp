@@ -15,7 +15,7 @@ using namespace PolyhedronFolder;
 typedef struct MeshObject<Vertex> Mesh;
 
 
-Mesh PolyUtils::ConstrPolyFace(int n,float s) {
+Mesh PolyUtils::ConstrPolyFace(uint n, float s) {
 
     std::vector<Vertex> vertexArray;
     std::vector<uint> indexArray;
@@ -24,17 +24,16 @@ Mesh PolyUtils::ConstrPolyFace(int n,float s) {
     indexArray.resize((n - 2) * 3);
 
     const float N = n;
-    const float angleOfRotation = glm::two_pi<float>() / n;
+    const float angleOfRotation = glm::two_pi<float>() / N;
     const float radius = s / (2.0f * glm::sin(glm::pi<float>()/N));
     float nth = 0;
-    Vertex V;
 
     for (int i = 0; i < n; ++i) {
 
-        auto pos = glm::vec3(glm::sin(angleOfRotation * nth) * radius,0,glm::cos(angleOfRotation * nth) * radius);
-        auto uv = glm::vec2 ((glm::sin(glm::two_pi<float>() * nth/N) + 1.0f) / 2.0f, (glm::cos(glm::two_pi<float>() * nth / N) + 1.0f ) / 2.0f );
+        auto const pos = glm::vec3(glm::sin(angleOfRotation * nth) * radius,0,glm::cos(angleOfRotation * nth) * radius);
+        auto const uv = glm::vec2 ((glm::sin(glm::two_pi<float>() * nth/N) + 1.0f) / 2.0f, (glm::cos(glm::two_pi<float>() * nth / N) + 1.0f ) / 2.0f );
 
-        V = Vertex{pos, glm::vec3(0.0f,1.0f,0.0f),uv};
+        auto const V = Vertex{pos, glm::vec3(0.0f,1.0f,0.0f),uv};
         vertexArray[i] = V;
         nth += 1.0f;
     }

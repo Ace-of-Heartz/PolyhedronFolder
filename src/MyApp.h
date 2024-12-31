@@ -107,19 +107,21 @@ protected:
 	void CleanShaders();
 
 
-	// Geometriával kapcsolatos változók
+	// Geometry on CPU
 
 	OGLObject m_PolyhedronPoly = {};
 	OGLObject m_PolyhedronObject = {};
 
 	// Polyhedron
-	glm::mat4 m_baseTransformation = glm::mat4(1.0f);
+	glm::mat4 m_basePolyTransform = glm::mat4(1.0f);
 	Polyhedron m_Polyhedron;
 	bool m_animate = false;
 	float m_animationSpeed = 1.0f;
 	float m_currentFoldValue = 0.0f;
 	float m_animationState = 0;
 
+	// Polyhedron Object
+	glm::mat4 m_baseObjTransform = glm::mat4(1.0f);
 
 
 	// Geometria inicializálása, és törtlése

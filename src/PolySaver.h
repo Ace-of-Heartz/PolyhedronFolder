@@ -20,7 +20,7 @@ namespace PolyhedronFolder
 
     class PolySaver {
     public:
-        static void Save(const std::string& fileName,const Polyhedron& poly);
+        static void SaveTo(const std::string& fileName,const Polyhedron& poly);
     private:
         static void SaveFace(std::ofstream* fileStrm,const PolyhedronFace* poly,bool isRoot = false);
 

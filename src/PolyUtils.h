@@ -16,7 +16,7 @@ namespace PolyhedronFolder {
     class PolyUtils {
     public:
         PolyUtils() = delete;
-        static MeshObject<Vertex> ConstrPolyFace(int n, float s);
+        static MeshObject<Vertex> ConstrPolyFace(uint n, float s);
 
         static float GetDefaultAngle(const uint& n,const uint& m) {
 
@@ -44,7 +44,10 @@ namespace PolyhedronFolder {
             auto keyVal = n <= m ? key(n,m) : key(m,n);
 
             if (defaultAngles.contains(keyVal))
+            {
+                std::cout << "Change from " << defaultAngles[keyVal] << " to " << angle  << std::endl;
                 defaultAngles.erase(keyVal);
+            }
 
             defaultAngles.insert(std::make_pair(keyVal,angle));
         }

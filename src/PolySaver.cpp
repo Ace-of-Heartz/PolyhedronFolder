@@ -9,7 +9,7 @@
 using namespace PolyhedronFolder;
 using namespace std;
 
-void PolySaver::Save(const string& fileName,const Polyhedron& poly)
+void PolySaver::SaveTo(const string& fileName,const Polyhedron& poly)
 {
     ofstream fileStrm( PATH + fileName + EXT,ios::binary);
 
