@@ -14,6 +14,8 @@
 #include "PolyParser.h"
 #include "PolyUtils.h"
 
+#include "ImGuiWidgets.h"
+
 
 using namespace PolyhedronFolder;
 
@@ -296,47 +298,15 @@ void CMyApp::RenderGUI()
 			ImGui::EndTabItem();
 			}
 
-			if (ImGui::BeginTabItem("1. Lighting")) {
-
-				{
-					static auto lightPosXZ = glm::vec2( 0.0f );
-					lightPosXZ = glm::vec2( m_light1.GetPosDir().x, m_light1.GetPosDir().z );
-					if ( ImGui::SliderFloat2( "Light Position XZ", glm::value_ptr( lightPosXZ ), -1.0f, 1.0f ) )
-					{
-						float lightPosL2 = lightPosXZ.x * lightPosXZ.x + lightPosXZ.y * lightPosXZ.y;
-						if ( lightPosL2 > 1.0f ) // Ha kívülre esne a körön, akkor normalizáljuk
-						{
-							lightPosXZ /= sqrtf( lightPosL2 );
-							lightPosL2 = 1.0f;
-						}
-
-						auto newLightPos = glm::vec4( lightPosXZ.x,sqrtf( 1.0f - lightPosL2 ), lightPosXZ.y,0.f );
-						m_light1.SetPosDir(newLightPos);
-					}
-					ImGui::LabelText( "Light Position Y", "%f", m_light1.GetPosDir().y );
-				}
-			ImGui::EndTabItem();
+			if(ImGui::BeginTabItem("1. Lighting"))
+			{
+				ImGuiWidgets::RenderLightGUI(m_light1);
+				ImGui::EndTabItem();
 			}
-
-			if (ImGui::BeginTabItem("2. Lighting")) {
-				{
-					static auto lightPosXZ = glm::vec2( 0.0f );
-					lightPosXZ = glm::vec2( m_light2.GetPosDir().x, m_light2.GetPosDir().z );
-					if ( ImGui::SliderFloat2( "Light Position XZ", glm::value_ptr( lightPosXZ ), -1.0f, 1.0f ) )
-					{
-						float lightPosL2 = lightPosXZ.x * lightPosXZ.x + lightPosXZ.y * lightPosXZ.y;
-						if ( lightPosL2 > 1.0f ) // Ha kívülre esne a körön, akkor normalizáljuk
-						{
-							lightPosXZ /= sqrtf( lightPosL2 );
-							lightPosL2 = 1.0f;
-						}
-
-						auto newLightPos = glm::vec4( lightPosXZ.x,sqrtf( 1.0f - lightPosL2 ), lightPosXZ.y,0.f );
-						m_light2.SetPosDir(newLightPos);
-					}
-					ImGui::LabelText( "Light Position Y", "%f", m_light2.GetPosDir().y );
-				}
-			ImGui::EndTabItem();
+			if(ImGui::BeginTabItem("2. Lighting"))
+			{
+				ImGuiWidgets::RenderLightGUI(m_light2);
+				ImGui::EndTabItem();
 			}
 		}
 		ImGui::EndTabBar();
@@ -364,8 +334,8 @@ void CMyApp::RenderGUI()
 				m_Polyhedron.SetFoldVal(m_currentFoldValue);
 			}
 
+			static bool focusOnInput = false;
 			static ImVector<char> buffer = ImVector<char>();
-
 			ImGui::InputTextWithHint("Input Command","ADD 2 4...",reinterpret_cast<char*>(&buffer),1024,ImGuiInputTextFlags_CallbackResize | ImGuiInputTextFlags_CharsUppercase,
 				[](ImGuiInputTextCallbackData* data) {
 					auto buffer = static_cast<ImVector<char> *>(data->UserData);
@@ -375,12 +345,20 @@ void CMyApp::RenderGUI()
 					return 0;
 				}, (void*)&buffer
  			);
+
+			if(focusOnInput)
+			{
+				ImGui::SetKeyboardFocusHere(-1);
+				focusOnInput = false;
+			}
+
 			if(ImGui::Button("Run Command") || ImGui::IsKeyPressed(ImGuiKey_Enter)) {
 				if (!buffer.empty()) {
 					std::string temp = buffer.Data;
 					PolyParser::SetDataFromInput(temp);
 					PolyParser::Parse(m_Polyhedron);
 				}
+				focusOnInput = true;
 			}
 		}
 		ImGui::EndChild();
@@ -404,7 +382,7 @@ void CMyApp::RenderGUI()
 // https://wiki.libsdl.org/SDL2/SDL_Keymod
 
 void CMyApp::KeyboardDown(const SDL_KeyboardEvent& key)
-{	
+{
 	if ( key.repeat == 0 ) // Először lett megnyomva
 	{
 		if ( key.keysym.sym == SDLK_F5 && key.keysym.mod & KMOD_CTRL )
@@ -480,8 +458,13 @@ void CMyApp::OtherEvent( const SDL_Event& ev )
 		}
 		else if (filename.rfind(".ojb") != std::string::npos) {
 			auto mesh = ObjParser::parse(filename);
-			// auto descriptors = {VertexAttributeDescriptor{}}
-			// CreateGLObjectFromMesh(mesh);
+			const std::initializer_list<VertexAttributeDescriptor> vertexAttribList = {
+				{ 0, offsetof( Vertex, position ), 3, GL_FLOAT },
+				{ 1, offsetof( Vertex, normal   ), 3, GL_FLOAT },
+				{ 2, offsetof( Vertex, texcoord ), 2, GL_FLOAT },
+			};
+
+			m_PolyhedronObject = CreateGLObjectFromMesh(mesh,vertexAttribList);
 		}
 		else if (filename.rfind(".png") != std::string::npos) {
 			LoadTexture(filename);
