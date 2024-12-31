@@ -32,10 +32,51 @@ PolyhedronFace::PolyhedronFace(
 PolyhedronFace::~PolyhedronFace() {
 }
 
+void PolyhedronFace::SetNumberOfEdges(uint newNumberOfEdges)
+{
+    this->mesh = PolyUtils::ConstrPolyFace(newNumberOfEdges, 1);
+
+    std::vector<PolyhedronFace*> newChildren;
+    newChildren.resize(newNumberOfEdges);
+
+    uint i = 0;
+    for (; i < newNumberOfEdges; i++)
+    {
+        if(children[i] != nullptr)
+        {
+            this->children[i]->SetTransformMatrix(PolyUtils::CalcTransformMtx(i,this->children[i]->GetEdgeCount(),newNumberOfEdges));
+            newChildren[i] = this->children[i];
+
+        }
+    }
+
+    for (; i < this->numberOfEdges; i++)
+    {
+        if(children[i] != nullptr)
+        {
+            this->Remove(i);
+        }
+    }
+
+    this->numberOfEdges = newNumberOfEdges;
+    this->children = newChildren;
+
+}
+
+void PolyhedronFace::SetPivotVal(const float pivotVal)
+{
+    this->pivotVal = pivotVal;
+}
+
+void PolyhedronFace::SetTransformMatrix(const mat4& transformMatrix)
+{
+    this->localTransformMtx = transformMatrix;
+}
+
 void PolyhedronFace::Add(uint edge, uint n, float pivotVal) {
     //TODO: Make this nicer
     if (edge == 0 && parent != nullptr || children[edge] != nullptr) {
-        throw std::invalid_argument("PolyhedronFace::Add ");
+        throw std::invalid_argument("PolyhedronFace::Add : Bad edge index");
     }
 
     auto tfMat = PolyUtils::CalcTransformMtx(edge,n,numberOfEdges);
@@ -46,7 +87,7 @@ void PolyhedronFace::Add(uint edge, uint n, float pivotVal) {
 PolyhedronFace* PolyhedronFace::Push(uint edge, const uint n, float pivotVal) {
 
     if (edge == 0 && parent != nullptr || children[edge] != nullptr) {
-        throw std::invalid_argument("PolyhedronFace::Push ");
+        throw std::invalid_argument("PolyhedronFace::Push : Bad edge index ");
     }
 
     auto tfMat = PolyUtils::CalcTransformMtx(edge,n,numberOfEdges);
@@ -55,11 +96,20 @@ PolyhedronFace* PolyhedronFace::Push(uint edge, const uint n, float pivotVal) {
     return children[edge];
 }
 
-void PolyhedronFace::Remove(uint edge) const
+bool PolyhedronFace::Remove(const uint edge)
 {
+    if (edge > numberOfEdges)
+    {
+        throw std::invalid_argument("PolyhedronFace::Remove : Bad edge index");
+
+    }
+
     if (children[edge] != nullptr)
     {
-        delete children[edge];
+        auto temp = children[edge];
+        children[edge] = nullptr;
+        delete temp;
+        return false;
     }
 }
 
@@ -164,4 +214,10 @@ Mesh Polyhedron::GetTransformedMesh(const glm::mat4 &baseTransform,const glm::ve
 
     return res;
 }
+
+IndexedMeshObject Polyhedron::GetIndexedMesh(const glm::mat4& baseTransform, const glm::vec3& cameraPos)
+{
+    return IndexedMeshObject(GetTransformedMesh(baseTransform,cameraPos));
+}
+
 

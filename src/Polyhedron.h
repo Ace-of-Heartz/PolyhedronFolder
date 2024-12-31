@@ -10,16 +10,16 @@
 #include "GLUtils.hpp"
 
 namespace PolyhedronFolder {
-    typedef struct MeshObject<Vertex> Mesh;
+    typedef MeshObject<Vertex> Mesh;
 
     class PolyhedronFace {
     public:
         PolyhedronFace(uint n,float pivotVal = 0.0f, const glm::mat4 &tfMat = glm::mat4(1.0f),PolyhedronFace* parent = nullptr,bool isRoot = true);
         ~PolyhedronFace();
 
-        void SetNumberOfEdges(uint numberOfEdges);
+        void SetNumberOfEdges(uint newNumberOfEdges);
         void SetPivotVal(float pivotVal);
-        void SetTransformMatrix(glm::mat4 transformMatrix);
+        void SetTransformMatrix(const glm::mat4& transformMatrix);
 
         [[nodiscard]] Mesh GetTransformedMesh(float t, const glm::mat4&, glm::vec3 cameraPos);
         [[nodiscard]] glm::mat4 GetFoldTransformationMatrix(float t) const;
@@ -40,10 +40,9 @@ namespace PolyhedronFolder {
         friend class Polyhedron;
 
         void Add(uint edge,uint n, float pivotVal = glm::half_pi<float>());
-        PolyhedronFace* Push(uint edge,uint n, float pivotVal = glm::half_pi<float>());
-        PolyhedronFace* Pop() {return parent;};
-        void Remove(uint edge) const;
-
+        [[nodiscard]] PolyhedronFace* Push(uint edge,uint n, float pivotVal = glm::half_pi<float>());
+        [[nodiscard]] PolyhedronFace* Pop() const {return parent;};
+        bool Remove(uint edge);
 
         Mesh mesh;
 
@@ -61,6 +60,7 @@ namespace PolyhedronFolder {
         Polyhedron();
 
         Mesh GetTransformedMesh(const glm::mat4& baseTransform,const glm::vec3& cameraPos);
+        IndexedMeshObject GetIndexedMesh(const glm::mat4& baseTransform,const glm::vec3& cameraPos);
 
         void Start(uint n) {
             root = new PolyhedronFace(n);
@@ -68,13 +68,13 @@ namespace PolyhedronFolder {
             isDirty = true;
         }
 
-        void Add(uint edge,uint n, float pivot_val = glm::half_pi<float>()) {
+        void Add(uint edge, uint n, float pivot_val = glm::half_pi<float>()) {
             std::cout << pivot_val << std::endl;
             active->Add(edge,n,pivot_val);
             isDirty = true;
         }
 
-        void Push(uint edge,uint n, float pivot_val = glm::half_pi<float>()) {
+        void Push(uint edge, uint n, float pivot_val = glm::half_pi<float>()) {
             active = active->Push(edge,n,pivot_val);
             isDirty = true;
         }
@@ -87,11 +87,18 @@ namespace PolyhedronFolder {
                 isDirty = true;
             }
             active = nullptr;
+        }
 
-        };
+        void Remove(const uint edge) const
+        {
+            active->Remove(edge);
+        }
+
+
+
 
         [[nodiscard]] bool IsDirty() const {return isDirty;}
-        void SetFoldVal(float t) {foldVal = t; isDirty = true;}
+        void SetFoldVal(const float t) {foldVal = t; isDirty = true;}
 
         [[nodiscard]] PolyhedronFace *GetActiveFace() const {return active;};
         [[nodiscard]] PolyhedronFace *GetRoot() const {return root;}
