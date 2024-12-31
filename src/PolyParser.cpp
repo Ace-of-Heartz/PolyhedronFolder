@@ -9,6 +9,7 @@
 #include <fstream>
 
 #include "InMemoryTokenizer.h"
+#include "ObjSaver.h"
 #include "PolyUtils.h"
 #include "PolySaver.h"
 
@@ -55,7 +56,9 @@ void PolyParser::Parse(Polyhedron &polyhedron) {
         }
 
         auto command = string(token);
-        switch(str2int(command)) {
+        try
+        {
+            switch(str2int(command)) {
             case str2int("START"): {
                 uint n;
 
@@ -155,17 +158,42 @@ void PolyParser::Parse(Polyhedron &polyhedron) {
                 polyhedron.Reset();
             } break;
             case str2int("SAVE_TO_POLY"): {
-                string fileName = string(tokenizer.NextToken(true));
-                PolySaver::Save(fileName,polyhedron);
+                const auto fileName = string(tokenizer.NextToken(true));
+                PolySaver::SaveTo(fileName,polyhedron);
             } break;
             case str2int("SAVE_TO_OBJ"): {
-                //TODO
+                const auto fileName = string(tokenizer.NextToken(true));
+                const auto objectName = string(tokenizer.NextToken(true));
+                const auto mesh = polyhedron.GetIndexedMesh(glm::mat4(1.0f),glm::vec3(0.0));
+
+                if (objectName.empty())
+                    ObjSaver::SaveTo(fileName,mesh);
+                else
+                    ObjSaver::SaveTo(fileName,mesh,objectName);
+            } break;
+            case str2int("SET_N"):
+            {
+                uint n;
+                string_view nT = tokenizer.NextToken(true);
+                from_chars(nT.data(), nT.data() + nT.size(), n);
+                polyhedron.GetActiveFace()->SetNumberOfEdges(n);
+            } break;
+            case str2int("REMOVE"): {
+                uint edge;
+                string_view edgeT = tokenizer.NextToken(true);
+                from_chars(edgeT.data(), edgeT.data() + edgeT.size(), edge);
+                polyhedron.Remove(edge);
             } break;
             default:
                 std::cout << "Not a valid command: " << token << std::endl;
             break;
 
         }
+        } catch(exception &e)
+        {
+            std::cerr << e.what()  << std::endl;
+        }
+
     }
     polyRawData.clear();
 }
