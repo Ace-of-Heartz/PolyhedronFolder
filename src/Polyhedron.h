@@ -8,6 +8,7 @@
 #include <glm/gtc/constants.hpp>
 
 #include "GLUtils.hpp"
+#include "Transform.h"
 
 namespace PolyhedronFolder {
     typedef MeshObject<Vertex> Mesh;
@@ -59,8 +60,8 @@ namespace PolyhedronFolder {
     public:
         Polyhedron();
 
-        Mesh GetTransformedMesh(const glm::mat4& baseTransform,const glm::vec3& cameraPos);
-        IndexedMeshObject GetIndexedMesh(const glm::mat4& baseTransform,const glm::vec3& cameraPos);
+        Mesh GetTransformedMesh(const glm::vec3& cameraPos, bool setToOrigin = false);
+        IndexedMeshObject GetIndexedMesh(const glm::vec3& cameraPos);
 
         void Start(uint n) {
             root = new PolyhedronFace(n);
@@ -94,7 +95,7 @@ namespace PolyhedronFolder {
             active->Remove(edge);
         }
 
-
+        [[nodiscard]] Transform& GetLocalTransform() { return localTransform;}
 
 
         [[nodiscard]] bool IsDirty() const {return isDirty;}
@@ -105,6 +106,8 @@ namespace PolyhedronFolder {
     private:
         PolyhedronFace* root = nullptr;
         PolyhedronFace* active = nullptr;
+
+        Transform localTransform;
 
         bool isDirty = true;
         float foldVal = 0.0f;

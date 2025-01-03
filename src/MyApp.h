@@ -19,6 +19,7 @@
 #include "CameraManipulator.h"
 #include "Polyhedron.h"
 #include "Light.h"
+#include "ObjectWrapper.h"
 
 using namespace PolyhedronFolder;
 
@@ -110,7 +111,8 @@ protected:
 	// Geometry on CPU
 
 	OGLObject m_PolyhedronPoly = {};
-	OGLObject m_PolyhedronObject = {};
+	// OGLObject m_PolyhedronObject = {};
+	ObjectWrapper m_PolyhedronObject;
 
 	// Polyhedron
 	glm::mat4 m_basePolyTransform = glm::mat4(1.0f);

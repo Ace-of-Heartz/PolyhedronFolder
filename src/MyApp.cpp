@@ -73,7 +73,7 @@ void CMyApp::InitGeometry()
 		{ 1, offsetof( Vertex, normal   ), 3, GL_FLOAT },
 		{ 2, offsetof( Vertex, texcoord ), 2, GL_FLOAT },
 	};
-	auto polyMeshCPU = m_Polyhedron.GetTransformedMesh(m_basePolyTransform,m_camera.GetEye());
+	auto polyMeshCPU = m_Polyhedron.GetTransformedMesh(m_camera.GetEye());
 	m_PolyhedronPoly = CreateGLObjectFromMesh(polyMeshCPU,vertexAttribList);
 
 }
@@ -212,7 +212,7 @@ void CMyApp::SetLightingUniforms( GLuint program, float Shininess, glm::vec3 Ka,
 void CMyApp::RenderPolyhedron() {
 	glProgramUniformMatrix4fv( m_programID, ul( m_programID,"viewProj"), 1, GL_FALSE, glm::value_ptr( m_camera.GetViewProj() ) );
 
-	auto matWorld = glm::mat4( 1.0f );
+	auto matWorld = glm::mat4(1);
 
 	glProgramUniformMatrix4fv( m_programID, ul( m_programID,"world" ),    1, GL_FALSE, glm::value_ptr( matWorld ) );
 	glProgramUniformMatrix4fv( m_programID, ul( m_programID,"worldIT" ),  1, GL_FALSE, glm::value_ptr( glm::transpose( glm::inverse( matWorld ) ) ) );
@@ -236,6 +236,27 @@ void CMyApp::RenderPolyhedron() {
 
 void CMyApp::RenderObject() {
 
+	glDisable(GL_CULL_FACE);
+	glProgramUniformMatrix4fv( m_programID, ul( m_programID,"viewProj"), 1, GL_FALSE, glm::value_ptr( m_camera.GetViewProj() ) );
+
+	auto matWorld = m_PolyhedronObject.GetLocalTransform().GetTransformMatrix();
+
+	glProgramUniformMatrix4fv( m_programID, ul( m_programID,"world" ),    1, GL_FALSE, glm::value_ptr( matWorld ) );
+	glProgramUniformMatrix4fv( m_programID, ul( m_programID,"worldIT" ),  1, GL_FALSE, glm::value_ptr( glm::transpose( glm::inverse( matWorld ) ) ) );
+
+	SetLightingUniforms( m_programID, m_Shininess, m_Ka, m_Kd, m_Ks );
+
+	glProgramUniform1i( m_programID, ul( m_programID,"texImage" ), 0 );
+
+	glBindTexture(0,m_PolyhedronTextureID);
+	glBindSampler( 0, m_SamplerID );
+
+	glBindVertexArray( m_PolyhedronObject.GetObject().vaoID );
+
+	glUseProgram( m_programID );
+
+	glDrawElements(GL_TRIANGLES,m_PolyhedronObject.GetObject().count,GL_UNSIGNED_INT,nullptr);
+	glEnable(GL_CULL_FACE);
 }
 
 void CMyApp::RenderAxis() {
@@ -275,6 +296,9 @@ void CMyApp::Render()
 
 void CMyApp::RenderGUI()
 {
+	// ImGui::ShowDemoWindow();
+	ImGuiIO& io = ImGui::GetIO();
+
 	if ( ImGui::Begin( "Lighting settings" ) )
 	{
 		if (ImGui::BeginTabBar( "Lighting & Material" )) {
@@ -316,9 +340,7 @@ void CMyApp::RenderGUI()
 
 	if ( ImGui::Begin("Polygon Settings")) {
 
-		if(ImGui::BeginChild("Controls")) {
-
-
+		if(ImGui::BeginChild("Controls",ImVec2(200,200))) {
 
 			if(ImGui::Checkbox("Animate?", &m_animate)) {
 			}
@@ -362,6 +384,29 @@ void CMyApp::RenderGUI()
 			}
 		}
 		ImGui::EndChild();
+		if (ImGui::BeginChild("Transform"))
+		{
+
+			auto translate = m_Polyhedron.GetLocalTransform().GetTranslationComponent();
+			if(ImGui::InputFloat3("Position",value_ptr(translate)))
+			{
+				m_Polyhedron.GetLocalTransform().SetTranslationComponent(translate);
+			}
+
+			auto rotation = m_Polyhedron.GetLocalTransform().GetRotationComponent();
+			if(ImGui::InputFloat3("Rotation",value_ptr(rotation)))
+			{
+				m_Polyhedron.GetLocalTransform().SetRotationComponent(rotation);
+			}
+
+			auto scale = m_Polyhedron.GetLocalTransform().GetScalingComponent();
+			if(ImGui::InputFloat3("Scale",value_ptr(scale)))
+			{
+				m_Polyhedron.GetLocalTransform().SetScalingComponent(scale);
+			}
+		}
+		ImGui::EndChild();
+
 
 		if (ImGui::BeginChild("View")) {
 
@@ -374,6 +419,32 @@ void CMyApp::RenderGUI()
 	}
 	ImGui::End();
 
+
+	if(ImGui::Begin("Object Settings"))
+	{
+		if(ImGui::BeginChild("Transform"))
+		{
+			auto translate = m_PolyhedronObject.GetLocalTransform().GetTranslationComponent();
+			if(ImGui::InputFloat3("Position",value_ptr(translate)))
+			{
+				m_PolyhedronObject.GetLocalTransform().SetTranslationComponent(translate);
+			}
+
+			auto rotation = m_PolyhedronObject.GetLocalTransform().GetRotationComponent();
+			if(ImGui::InputFloat3("Rotation",value_ptr(rotation)))
+			{
+				m_PolyhedronObject.GetLocalTransform().SetRotationComponent(rotation);
+			}
+
+			auto scale = m_PolyhedronObject.GetLocalTransform().GetScalingComponent();
+			if(ImGui::InputFloat3("Scale",value_ptr(scale)))
+			{
+				m_PolyhedronObject.GetLocalTransform().SetScalingComponent(scale);
+			}
+		}
+		ImGui::EndChild();
+	}
+	ImGui::End();
 }
 
 // https://wiki.libsdl.org/SDL2/SDL_KeyboardEvent
@@ -443,7 +514,6 @@ void CMyApp::Resize(int _w, int _h)
 // Le nem kezelt, egzotikus esemény kezelése
 // https://wiki.libsdl.org/SDL2/SDL_Event
 
-#include <iostream>
 void CMyApp::OtherEvent( const SDL_Event& ev )
 {
 	if ( ev.type == SDL_DROPFILE || ev.type == SDL_DROPTEXT) {
@@ -456,15 +526,15 @@ void CMyApp::OtherEvent( const SDL_Event& ev )
 			PolyParser::Parse(m_Polyhedron);
 
 		}
-		else if (filename.rfind(".ojb") != std::string::npos) {
+		else if (filename.rfind(".obj") != std::string::npos) {
 			auto mesh = ObjParser::parse(filename);
-			const std::initializer_list<VertexAttributeDescriptor> vertexAttribList = {
+			std::initializer_list<VertexAttributeDescriptor> vertexAttribList = {
 				{ 0, offsetof( Vertex, position ), 3, GL_FLOAT },
 				{ 1, offsetof( Vertex, normal   ), 3, GL_FLOAT },
 				{ 2, offsetof( Vertex, texcoord ), 2, GL_FLOAT },
 			};
 
-			m_PolyhedronObject = CreateGLObjectFromMesh(mesh,vertexAttribList);
+			m_PolyhedronObject = ObjectWrapper(CreateGLObjectFromMesh(mesh,vertexAttribList));
 		}
 		else if (filename.rfind(".png") != std::string::npos) {
 			LoadTexture(filename);
@@ -472,5 +542,3 @@ void CMyApp::OtherEvent( const SDL_Event& ev )
 		SDL_free(ev.drop.file);
 	}
 }
-
-

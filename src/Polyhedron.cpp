@@ -204,20 +204,20 @@ glm::mat4 PolyhedronFace::GetFoldTransformationMatrix(const float t) const {
 
 Polyhedron::Polyhedron() : isDirty(true) {};
 
-Mesh Polyhedron::GetTransformedMesh(const glm::mat4 &baseTransform,const glm::vec3& cameraPos)  {
+Mesh Polyhedron::GetTransformedMesh(const glm::vec3& cameraPos,const bool setToOrigin)  {
     auto res = Mesh();
 
     if (root) {
-        res = root->GetTransformedMesh(foldVal,baseTransform,cameraPos);
+        res = root->GetTransformedMesh(foldVal,setToOrigin ? mat4(1) : localTransform.GetTransformMatrix(),cameraPos);
     }
     isDirty = false;
 
     return res;
 }
 
-IndexedMeshObject Polyhedron::GetIndexedMesh(const glm::mat4& baseTransform, const glm::vec3& cameraPos)
+IndexedMeshObject Polyhedron::GetIndexedMesh(const glm::vec3& cameraPos)
 {
-    return IndexedMeshObject(GetTransformedMesh(baseTransform,cameraPos));
+    return IndexedMeshObject(GetTransformedMesh(cameraPos, true));
 }
 
 

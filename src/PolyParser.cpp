@@ -164,7 +164,7 @@ void PolyParser::Parse(Polyhedron &polyhedron) {
             case str2int("SAVE_TO_OBJ"): {
                 const auto fileName = string(tokenizer.NextToken(true));
                 const auto objectName = string(tokenizer.NextToken(true));
-                const auto mesh = polyhedron.GetIndexedMesh(glm::mat4(1.0f),glm::vec3(0.0));
+                const auto mesh = polyhedron.GetIndexedMesh(glm::vec3(0.0));
 
                 if (objectName.empty())
                     ObjSaver::SaveTo(fileName,mesh);
