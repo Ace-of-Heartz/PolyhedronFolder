@@ -5,38 +5,116 @@
 #ifndef POLYHEDRON_H
 #define POLYHEDRON_H
 
+#include <glm/gtc/constants.hpp>
+
 #include "GLUtils.hpp"
+#include "Transform.h"
 
+namespace PolyhedronFolder {
+    typedef MeshObject<Vertex> Mesh;
 
-struct AbstractPolyhedronFace {
-    virtual ~AbstractPolyhedronFace() = 0;
-} typedef AbstractPolyhedronFace;
+    class PolyhedronFace {
+    public:
+        PolyhedronFace(uint n,float pivotVal = 0.0f, const glm::mat4 &tfMat = glm::mat4(1.0f),PolyhedronFace* parent = nullptr,bool isRoot = true);
+        ~PolyhedronFace();
 
-template<int N>
-class PolyhedronFace : public AbstractPolyhedronFace {
-public:
-    PolyhedronFace();
-    ~PolyhedronFace() override {
-        delete[] children;
+        void SetNumberOfEdges(uint newNumberOfEdges);
+        void SetPivotVal(float pivotVal);
+        void SetTransformMatrix(const glm::mat4& transformMatrix);
+
+        [[nodiscard]] Mesh GetTransformedMesh(float t, const glm::mat4&, glm::vec3 cameraPos);
+        [[nodiscard]] glm::mat4 GetFoldTransformationMatrix(float t) const;
+        [[nodiscard]] unsigned int GetEdgeCount() const {return numberOfEdges;}
+        [[nodiscard]] bool IsSingleParent() const
+        {
+            bool res = false;
+            for (int i = 0; i < numberOfEdges  && !res; i++)
+            {
+                res = false || children[i] != nullptr;
+            }
+            return res;
+        }
+        [[nodiscard]] PolyhedronFace* GetNthChildren(const uint n) const { return children[n];}
+        [[nodiscard]] float GetPivotVal() const { return pivotVal;}
+
+    private:
+        friend class Polyhedron;
+
+        void Add(uint edge,uint n, float pivotVal = glm::half_pi<float>());
+        [[nodiscard]] PolyhedronFace* Push(uint edge,uint n, float pivotVal = glm::half_pi<float>());
+        [[nodiscard]] PolyhedronFace* Pop() const {return parent;};
+        bool Remove(uint edge);
+
+        Mesh mesh;
+
+        std::vector<PolyhedronFace*> children;
+        PolyhedronFace* parent;
+        int activeNeighbourIdx = 0;
+
+        unsigned int numberOfEdges = 0;
+        float pivotVal = 0.0f;
+        glm::mat4 localTransformMtx = glm::mat4(1.0f);
     };
 
-    void Add(int n);
-    AbstractPolyhedronFace* Push(int n);
-    void Pop();
+    class Polyhedron {
+    public:
+        Polyhedron();
 
-    glm::mat4 Rotate(float angle);
+        Mesh GetTransformedMesh(const glm::vec3& cameraPos, bool setToOrigin = false);
+        IndexedMeshObject GetIndexedMesh(const glm::vec3& cameraPos);
 
-private:
-    int activeNeighbourIdx = 0;
+        void Start(uint n) {
+            root = new PolyhedronFace(n);
+            active = root;
+            isDirty = true;
+        }
 
-    typedef struct MeshObject<Vertex> Mesh;
-    Mesh mesh;
+        void Add(uint edge, uint n, float pivot_val = glm::half_pi<float>()) {
+            std::cout << pivot_val << std::endl;
+            active->Add(edge,n,pivot_val);
+            isDirty = true;
+        }
 
-    template<int M>
-    AbstractPolyhedronFace* children[N];
-    template<int M>
-    AbstractPolyhedronFace* parent;
-};
+        void Push(uint edge, uint n, float pivot_val = glm::half_pi<float>()) {
+            active = active->Push(edge,n,pivot_val);
+            isDirty = true;
+        }
+
+        void Pop() {active = active->Pop();}
+
+        void Reset() {
+            if (root) {
+                delete root; root = nullptr;
+                isDirty = true;
+            }
+            active = nullptr;
+        }
+
+        void Remove(const uint edge) const
+        {
+            active->Remove(edge);
+        }
+
+        [[nodiscard]] Transform& GetLocalTransform() { return localTransform;}
+
+
+        [[nodiscard]] bool IsDirty() const {return isDirty;}
+        void SetFoldVal(const float t) {foldVal = t; isDirty = true;}
+
+        [[nodiscard]] PolyhedronFace *GetActiveFace() const {return active;};
+        [[nodiscard]] PolyhedronFace *GetRoot() const {return root;}
+    private:
+        PolyhedronFace* root = nullptr;
+        PolyhedronFace* active = nullptr;
+
+        Transform localTransform;
+
+        bool isDirty = true;
+        float foldVal = 0.0f;
+    };
+}
+
+
 
 
 

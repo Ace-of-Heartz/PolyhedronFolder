@@ -37,3 +37,7 @@
 
 # Flake & Nix
 *direnv*
+
+# Do not exclude assets
+!Assets/**/*.obj
+

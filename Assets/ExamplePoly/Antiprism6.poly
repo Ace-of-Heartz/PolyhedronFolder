@@ -1,0 +1,19 @@
+# Lots of magic numbers in this one
+
+START 3
+PIVOT 3 3 0.6070
+PUSH 0
+PUSH 2
+PUSH 1
+PUSH 2
+PUSH 1
+PUSH 2
+PUSH 1
+PUSH 2
+PUSH 1
+PUSH 2
+ADD 2 6 1.415796
+PUSH 1 3
+ADD 1 6 1.415796
+
+

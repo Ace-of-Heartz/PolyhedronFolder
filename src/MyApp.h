@@ -17,6 +17,11 @@
 #include "GLUtils.hpp"
 #include "Camera.h"
 #include "CameraManipulator.h"
+#include "Polyhedron.h"
+#include "Light.h"
+#include "ObjectWrapper.h"
+
+using namespace PolyhedronFolder;
 
 struct SUpdateInfo
 {
@@ -33,8 +38,14 @@ public:
 	bool Init();
 	void Clean();
 
+	void LoadTexture(const std::string& filename);
+
 	void Update( const SUpdateInfo& );
 	void Render();
+	void RenderPolyhedron();
+	void RenderObject();
+	void RenderAxis();
+
 	void RenderGUI();
 
 	void KeyboardDown(const SDL_KeyboardEvent&);
@@ -55,10 +66,6 @@ protected:
 
 	float m_ElapsedTimeInSec = 0.0f;
 
-	glm::vec3 EvaluatePathPosition() const;
-	glm::vec3 EvaluatePathTangent() const;
-
-
 	// Kamera
 	Camera m_camera;
 	CameraManipulator m_cameraManipulator;
@@ -69,15 +76,19 @@ protected:
 	
 	// shaderekhez szükséges változók
 	GLuint m_programID = 0;		  // shaderek programja
-	GLuint m_programSkyboxID = 0; // skybox programja
+
 	GLuint m_programAxis = 0;
 
 	// Fényforrás- ...
-	glm::vec4 m_lightPos = glm::vec4( 0.0f, 1.0f, 0.0f, 0.0f );
 
-	glm::vec3 m_La = glm::vec3( 0.125f );
-	glm::vec3 m_Ld = glm::vec3(1.0, 1.0, 1.0 );
-	glm::vec3 m_Ls = glm::vec3(1.0, 1.0, 1.0 );
+	Light m_light1 = Light(
+		glm::vec4( 0.0f, 1.0f, 1.0f, 0.0f ),glm::vec3( 0.125f ),glm::vec3(1.0, 1.0, 1.0 ),glm::vec3(0.0, 0.0, 0.0 )
+		);
+	Light m_light2 = Light(
+		glm::vec4( 0.0f, -1.0f, -1.0f, 0.0f ),glm::vec3( 0.125f ),glm::vec3(1.0, 1.0, 1.0 ),glm::vec3(0.0, 0.0, 0.0 )
+		);
+
+
 
 	float m_lightConstantAttenuation    = 1.0;
 	float m_lightLinearAttenuation      = 0.0;
@@ -90,33 +101,42 @@ protected:
 
 	float m_Shininess = 1.0;
 
+
+
 	// Shaderek inicializálása, és törtlése
 	void InitShaders();
 	void CleanShaders();
-	void InitSkyboxShaders();
-	void CleanSkyboxShaders();
 
-	// Geometriával kapcsolatos változók
+
+	// Geometry on CPU
 
 	OGLObject m_PolyhedronPoly = {};
-	OGLObject m_PolyhedronObject = {};
+	// OGLObject m_PolyhedronObject = {};
+	ObjectWrapper m_PolyhedronObject;
+
+	// Polyhedron
+	glm::mat4 m_basePolyTransform = glm::mat4(1.0f);
+	Polyhedron m_Polyhedron;
+	bool m_animate = false;
+	float m_animationSpeed = 1.0f;
+	float m_currentFoldValue = 0.0f;
+	float m_animationState = 0;
+
+	// Polyhedron Object
+	glm::mat4 m_baseObjTransform = glm::mat4(1.0f);
 
 
 	// Geometria inicializálása, és törtlése
 	void InitGeometry();
 	void CleanGeometry();
-	void InitSkyboxGeometry();
-	void CleanSkyboxGeometry();
 
 	// Textúrázás, és változói
     GLuint m_SamplerID = 0;
 
-	GLuint m_PolyhedronTex = 0;
+	GLuint m_PolyhedronTextureID = 0;
 
 	void InitTextures();
 	void CleanTextures();
-	void InitSkyboxTextures();
-	void CleanSkyboxTextures();
 
 	void SetLightingUniforms( GLuint program, float Shininess, glm::vec3 Ka = glm::vec3( 1.0 ), glm::vec3 Kd  = glm::vec3( 1.0 ), glm::vec3 Ks  = glm::vec3( 1.0 ) );
 };

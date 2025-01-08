@@ -2,8 +2,17 @@
 
 #include <filesystem>
 #include <vector>
-
+#include <algorithm>
+#include <iostream>
+#include <set>
+#include <unordered_map>
 #include <GL/glew.h>
+
+#ifndef GLM_ENABLE_EXPERIMENTAL
+#define GLM_ENABLE_EXPERIMENTAL
+#endif
+#include "glm/gtx/hash.hpp"
+
 #include <glm/glm.hpp>
 
 /* 
@@ -16,8 +25,8 @@ Az http://www.opengl-tutorial.org/ oldal alapján.
 
 struct VertexPosColor
 {
-    glm::vec3 position;
-    glm::vec3 color;
+	glm::vec3 position;
+	glm::vec3 color;
 };
 
 struct VertexPosTex
@@ -85,8 +94,151 @@ struct ImageRGBA
 template<typename VertexT>
 struct MeshObject
 {
+	MeshObject() = default;
+	MeshObject(const std::vector<VertexT>& vertexArray, const std::vector<GLuint>& indexArray, bool reverseOrder = false )
+	: vertexArray(vertexArray), indexArray(reverseOrder ? std::vector<GLuint>(indexArray.crbegin(),indexArray.crend()): indexArray) {}
+	void operator+=(MeshObject<VertexT> other) {
+		vertexArray.insert(vertexArray.cend(), other.vertexArray.begin(), other.vertexArray.end());
+
+		auto offset = *std::max_element(indexArray.begin(), indexArray.end()) + 1;
+		auto temp = other.indexArray;
+		uint n = indexArray.size();
+		std::transform(temp.begin(), temp.end(), std::back_inserter(indexArray), [&](auto i) { return i + offset; });
+
+	}
+
     std::vector<VertexT> vertexArray;
     std::vector<GLuint>  indexArray;
+};
+
+class IndexedMeshObject
+{
+public:
+	IndexedMeshObject() = default;
+
+	explicit IndexedMeshObject(const MeshObject<Vertex>& meshObject) : IndexedMeshObject(meshObject.vertexArray, meshObject.indexArray) {}
+
+	IndexedMeshObject(const std::vector<Vertex>& vertexArray, const std::vector<GLuint>& indexArray) : positions({}), texCoords({})
+	{
+		constexpr auto threshold = 0.0001f;
+
+		positions.reserve(vertexArray.size());
+		texCoords.reserve(vertexArray.size());
+
+		positionIndices.reserve(indexArray.size());
+		texCoordIndices.reserve(indexArray.size());
+		uint uniquePosIdx = 0;
+		uint uniqueTexIdx = 0;
+		for (const auto& [position, normal, texCoord] : vertexArray)
+		{
+			bool posAlreadyFound = false;
+			bool texAlreadyFound = false;
+
+			for (int i = 0; i < this->positions.size(); i++)
+			{
+				{
+					auto diff = abs(positions[i]- position);
+					if (diff.x <= threshold && diff.y <= threshold &&  diff.z <= threshold)
+					{
+						posAlreadyFound = true;
+					}
+				}
+
+				{
+					auto diff = abs(texCoords[i]-texCoord);
+
+					if(diff.x <= threshold && diff.y <= threshold)
+					{
+						texAlreadyFound = true;
+					}
+				}
+			}
+
+			if (!posAlreadyFound) positions.push_back(position);
+			if (!texAlreadyFound) texCoords.push_back(texCoord);
+
+		}
+
+		for (const uint& i : indexArray)
+		{
+			auto [pos,norm,uv] = vertexArray[i]; // Get position
+
+
+
+			for (int j = 0; j < this->positions.size(); j++)
+			{
+				auto diffPos = abs(positions[j]-pos);
+
+
+				if(diffPos.x < threshold && diffPos.y < threshold && diffPos.z < threshold)
+				{
+					positionIndices.push_back(j + 1);
+					break;
+				}
+
+			}
+
+			for (int j = 0; j < this->texCoords.size(); j++)
+			{
+				auto diffUV = abs(texCoords[j]-uv);
+
+				if (diffUV.x < threshold && diffUV.y < threshold)
+				{
+					texCoordIndices.push_back(j + 1);
+					break;
+				}
+			}
+
+			// auto posId = std::ranges::find(positions,pos); // Check new index of position
+			// auto uvId = texCoords.at(uv); // Check new index of UV
+
+			// positionIndices.push_back(posId + 1);
+			// texCoordIndices.push_back(uvId + 1);
+		}
+	}
+
+
+
+	//
+	// void operator+=( IndexedMeshObject other )
+	// {
+	//
+	// 	uint uniqueIdx = positions.size();
+	// 	for(auto &pos : other.positions)
+	// 	{
+	// 		if (positions.contains(pos.first))
+	// 		{
+	//
+	// 		}
+	// 		else
+	// 		{
+	// 			positions.insert({pos.first, uniqueIdx});
+	// 			for(int i = 0; i < other.positionIndices.size(); i++)
+	// 			{
+	// 				if(positionIndices[i] == pos.second)
+	// 				{
+	//
+	// 				}
+	// 			}
+	//
+	// 			uniqueIdx++;
+	//
+	// 		}
+	//
+	// 	}
+	//
+	// 	for(auto &i : other.texCoords)
+	// 	{
+	//
+	// 	}
+	// }
+
+	std::vector<glm::vec3> positions;
+	std::vector<glm::vec2> texCoords;
+
+	std::vector<uint> positionIndices;
+	std::vector<uint> texCoordIndices;
+
 };
 
 struct OGLObject
