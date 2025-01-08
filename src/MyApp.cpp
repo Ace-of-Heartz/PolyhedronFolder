@@ -422,7 +422,7 @@ void CMyApp::RenderGUI()
 
 	if(ImGui::Begin("Object Settings"))
 	{
-		if(ImGui::BeginChild("Transform"))
+		if(ImGui::BeginChild("Transform",ImVec2(0,80)))
 		{
 			auto translate = m_PolyhedronObject.GetLocalTransform().GetTranslationComponent();
 			if(ImGui::InputFloat3("Position",value_ptr(translate)))
@@ -443,6 +443,12 @@ void CMyApp::RenderGUI()
 			}
 		}
 		ImGui::EndChild();
+
+		if(ImGui::Button("Delete"))
+		{
+			m_PolyhedronObject.ClearObject();
+		}
+
 	}
 	ImGui::End();
 }

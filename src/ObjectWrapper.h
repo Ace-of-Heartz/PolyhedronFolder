@@ -22,6 +22,7 @@ public:
   template <typename VertexT>
   void CreateObject (MeshObject<VertexT>& mesh, std::initializer_list<VertexAttributeDescriptor>& attributes);
   void SetObject(OGLObject object) {this->object = object;}
+  void ClearObject() { this->object = OGLObject(); }
 private:
   OGLObject object = {};
   Transform localTransform = {};
