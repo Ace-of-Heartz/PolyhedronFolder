@@ -340,7 +340,7 @@ void CMyApp::RenderGUI()
 
 	if ( ImGui::Begin("Polygon Settings")) {
 
-		if(ImGui::BeginChild("Controls",ImVec2(200,200))) {
+		if(ImGui::BeginChild("Controls",ImVec2(320,200))) {
 
 			if(ImGui::Checkbox("Animate?", &m_animate)) {
 			}
@@ -399,6 +399,34 @@ void CMyApp::RenderGUI()
 					}
 				}
 				focusOnInput = true;
+			}
+			if(ImGui::BeginItemTooltip())
+			{
+				auto addBullet = [](const char* commandName,const char* commandDesc)
+				{
+					ImGui::BulletText("%s",commandName);
+					ImGui::SameLine();
+					ImGui::Text("%s",commandDesc);
+				};
+
+				ImGui::Text("Commands:");
+				addBullet("START n:","Initialize an N-gon with 'n' sides");
+				addBullet("ADD e n pivot:", "Attach an 'n' side N-gon to the 'e'th side of the active polygon.\n\t'n': Optional argument. If not specified, use the last input 'n' value.\n\t'pivot': Optional argument. If not specified, lookup the pivot value between\n the current active polygon, and the input polygon.");
+				addBullet("PUSH e n pivot:","Attach an 'n' side N-gon to the 'e'th side of the active polygon. Changes the active side to the input polygon.\n\t'n': Optional argument. If not specified, use the last input 'n' value.\n\t'pivot': Optional argument. If not specified, lookup the pivot value between the current active polygon,\n and the input polygon.");
+				addBullet("POP", "Makes the current active polygon's parent into the active polygon");
+				addBullet("PIVOT n m p", "Specifies the default value between 'n' and 'm' side polygons to 'p'");
+				addBullet("PIVOT_POLY n m o", "Calculates the default value between 'n' and 'm' assuming they meet at 'o' regular polygon");
+				addBullet("PIVOT_VERTEX n m o", "PIVOT_POLY, but for all possible combinations between 'n', 'm' and 'o'");
+				ImGui::Separator();
+				addBullet("CLEAR","Clears the current polygon");
+				addBullet("SAVE_TO_POLY path", "Save the current poly to the specified path");
+				addBullet("SAVE_TO_OBJ path","Save the current poly into an .obj mesh to the specified path");
+				addBullet("SET_N n", "Sets the number of edges of the active polygon. Destructive operation");
+				addBullet("SET_PIVOT p", "Sets the pivot value of the active polygon");
+				addBullet("REMOVE e","Removes the polygon attached to the 'e'nth edge of the active polygon");
+				//TODO: Add more command tooltips
+				ImGui::EndTooltip();
+
 			}
 		}
 		ImGui::EndChild();
