@@ -23,7 +23,7 @@ namespace PolyhedronFolder {
             auto keyVal = n <= m ? key(n,m) : key(m,n);
 
             if (!defaultAngles.contains(keyVal))
-                throw std::runtime_error("No default angle!");
+                throw std::logic_error("No default angle!");
 
             return defaultAngles[keyVal];
 
@@ -34,7 +34,7 @@ namespace PolyhedronFolder {
             auto keyVal = n.first <= n.second ? key(n.first,n.second) : key(n.second,n.first);
 
             if (!defaultAngles.contains(keyVal)) {
-                throw std::runtime_error("No default angle!");
+                throw std::logic_error("No default angle!");
             }
             return defaultAngles[keyVal];
         }

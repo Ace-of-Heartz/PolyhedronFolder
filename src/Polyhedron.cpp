@@ -98,12 +98,6 @@ PolyhedronFace* PolyhedronFace::Push(uint edge, const uint n, float pivotVal) {
 
 bool PolyhedronFace::Remove(const uint edge)
 {
-    if (edge > numberOfEdges)
-    {
-        throw std::invalid_argument("PolyhedronFace::Remove : Bad edge index");
-
-    }
-
     if (children[edge] != nullptr)
     {
         auto temp = children[edge];
@@ -208,7 +202,7 @@ Mesh Polyhedron::GetTransformedMesh(const glm::vec3& cameraPos,const bool setToO
     auto res = Mesh();
 
     if (root) {
-        res = root->GetTransformedMesh(foldVal,setToOrigin ? mat4(1) : localTransform.GetTransformMatrix(),cameraPos);
+        res = root->GetTransformedMesh(foldState,setToOrigin ? mat4(1) : localTransform.GetTransformMatrix(),cameraPos);
     }
     isDirty = false;
 

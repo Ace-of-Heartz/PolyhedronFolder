@@ -378,7 +378,25 @@ void CMyApp::RenderGUI()
 				if (!buffer.empty()) {
 					std::string temp = buffer.Data;
 					PolyParser::SetDataFromInput(temp);
-					PolyParser::Parse(m_Polyhedron);
+
+					try
+					{
+						PolyParser::Parse(m_Polyhedron);
+
+					} catch (std::invalid_argument& e) {
+						m_errorHappened = true;
+						m_errorMessage = e.what();
+
+					}
+					catch (std::logic_error& e) {
+						m_errorHappened = true;
+						m_errorMessage = e.what();
+					}
+					catch (...)
+					{
+						m_errorHappened = true;
+						m_errorMessage = "Unknown error";
+					}
 				}
 				focusOnInput = true;
 			}
@@ -450,7 +468,24 @@ void CMyApp::RenderGUI()
 		}
 
 	}
+
 	ImGui::End();
+
+	if (m_errorHappened)
+	{
+		ImGui::OpenPopup("Error");
+		m_errorHappened = false;
+	}
+
+	if(ImGui::BeginPopup("Error"))
+	{
+		ImGui::Text("Error occurred: %s", m_errorMessage.data());
+		if(ImGui::Button("Cancel"))
+			ImGui::CloseCurrentPopup();
+		ImGui::EndPopup();
+
+	}
+
 }
 
 // https://wiki.libsdl.org/SDL2/SDL_KeyboardEvent
@@ -529,7 +564,26 @@ void CMyApp::OtherEvent( const SDL_Event& ev )
 		if (filename.rfind(".poly") != std::string::npos) {
 			m_Polyhedron.Reset();
 			PolyParser::SetDataFromFile(filename);
-			PolyParser::Parse(m_Polyhedron);
+
+			try
+			{
+				PolyParser::Parse(m_Polyhedron);
+			} catch (std::invalid_argument& e)
+			{
+				m_errorHappened = true;
+				m_errorMessage = e.what();
+			}
+			catch (std::logic_error& e)
+			{
+
+				m_errorHappened = true;
+				m_errorMessage = e.what();
+			}
+			catch (...)
+			{
+				m_errorHappened = true;
+				m_errorMessage = "Unknown error";
+			}
 
 		}
 		else if (filename.rfind(".obj") != std::string::npos) {

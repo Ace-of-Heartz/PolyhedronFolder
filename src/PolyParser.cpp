@@ -56,8 +56,7 @@ void PolyParser::Parse(Polyhedron &polyhedron) {
         }
 
         auto command = string(token);
-        try
-        {
+
             switch(str2int(command)) {
             case str2int("START"): {
                 uint n;
@@ -154,7 +153,7 @@ void PolyParser::Parse(Polyhedron &polyhedron) {
                 PolyUtils::SetDefaultAngle(o,n,PolyUtils::CalcDefaultAngleBetween(o,n,m));
                 PolyUtils::SetDefaultAngle(m,o,PolyUtils::CalcDefaultAngleBetween(m,o,n));
             } break;
-            case str2int("RESET"): {
+            case str2int("CLEAR"): {
                 polyhedron.Reset();
             } break;
             case str2int("SAVE_TO_POLY"): {
@@ -173,11 +172,19 @@ void PolyParser::Parse(Polyhedron &polyhedron) {
             } break;
             case str2int("SET_N"):
             {
-                uint n;
-                string_view nT = tokenizer.NextToken(true);
-                from_chars(nT.data(), nT.data() + nT.size(), n);
-                polyhedron.GetActiveFace()->SetNumberOfEdges(n);
+                    uint n;
+                    string_view nT = tokenizer.NextToken(true);
+                    from_chars(nT.data(), nT.data() + nT.size(), n);
+                    polyhedron.SetEdgeCountOfActive(n);
+
             } break;
+            case str2int("SET_PIVOT"):
+                {
+                    float p;
+                    string_view pT = tokenizer.NextToken(true);
+                    from_chars(pT.data(), pT.data() + pT.size(), p);
+                    polyhedron.SetPivotOfActive(p);
+                } break;
             case str2int("REMOVE"): {
                 uint edge;
                 string_view edgeT = tokenizer.NextToken(true);
@@ -185,13 +192,9 @@ void PolyParser::Parse(Polyhedron &polyhedron) {
                 polyhedron.Remove(edge);
             } break;
             default:
-                std::cout << "Not a valid command: " << token << std::endl;
+                // std::cout << "Not a valid command: " << token << std::endl;
             break;
 
-        }
-        } catch(exception &e)
-        {
-            std::cerr << e.what()  << std::endl;
         }
 
     }

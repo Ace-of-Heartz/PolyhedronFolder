@@ -15,12 +15,6 @@ namespace PolyhedronFolder {
 
     class PolyhedronFace {
     public:
-        PolyhedronFace(uint n,float pivotVal = 0.0f, const glm::mat4 &tfMat = glm::mat4(1.0f),PolyhedronFace* parent = nullptr,bool isRoot = true);
-        ~PolyhedronFace();
-
-        void SetNumberOfEdges(uint newNumberOfEdges);
-        void SetPivotVal(float pivotVal);
-        void SetTransformMatrix(const glm::mat4& transformMatrix);
 
         [[nodiscard]] Mesh GetTransformedMesh(float t, const glm::mat4&, glm::vec3 cameraPos);
         [[nodiscard]] glm::mat4 GetFoldTransformationMatrix(float t) const;
@@ -38,7 +32,13 @@ namespace PolyhedronFolder {
         [[nodiscard]] float GetPivotVal() const { return pivotVal;}
 
     private:
+        PolyhedronFace(uint n,float pivotVal = 0.0f, const glm::mat4 &tfMat = glm::mat4(1.0f),PolyhedronFace* parent = nullptr,bool isRoot = true);
+        ~PolyhedronFace();
         friend class Polyhedron;
+
+        void SetNumberOfEdges(uint newNumberOfEdges);
+        void SetPivotVal(float pivotVal);
+        void SetTransformMatrix(const glm::mat4& transformMatrix);
 
         void Add(uint edge,uint n, float pivotVal = glm::half_pi<float>());
         [[nodiscard]] PolyhedronFace* Push(uint edge,uint n, float pivotVal = glm::half_pi<float>());
@@ -56,31 +56,63 @@ namespace PolyhedronFolder {
         glm::mat4 localTransformMtx = glm::mat4(1.0f);
     };
 
-    class Polyhedron {
+    class Polyhedron
+    {
     public:
         Polyhedron();
 
         Mesh GetTransformedMesh(const glm::vec3& cameraPos, bool setToOrigin = false);
         IndexedMeshObject GetIndexedMesh(const glm::vec3& cameraPos);
 
-        void Start(uint n) {
+        void Start(const uint n) {
+            if (n <= 2)
+                throw std::invalid_argument("Edge count must be greater than 2!");
+
+
             root = new PolyhedronFace(n);
             active = root;
             isDirty = true;
         }
 
         void Add(uint edge, uint n, float pivot_val = glm::half_pi<float>()) {
-            std::cout << pivot_val << std::endl;
+            if (!active)
+                throw std::logic_error("No active polyhedron to add to!");
+
+            if (active->GetEdgeCount() <= edge)
+                throw std::invalid_argument("Edge out of range!");
+
+            if (n <= 2)
+                throw  std::invalid_argument("Edge count must be greater than 2!");
+
             active->Add(edge,n,pivot_val);
             isDirty = true;
+
         }
 
         void Push(uint edge, uint n, float pivot_val = glm::half_pi<float>()) {
+            if (!active)
+                throw std::logic_error("No active polyhedron to push to!");
+
+            if (active->GetEdgeCount() <= edge)
+                throw std::invalid_argument("Edge out of range!");
+
+            if (n <= 2)
+                throw std::invalid_argument("Edge count must be greater than 2!");
+
+
             active = active->Push(edge,n,pivot_val);
             isDirty = true;
         }
 
-        void Pop() {active = active->Pop();}
+        void Pop()
+        {
+            if(!active)
+                throw std::logic_error("No active polyhedron to pop out of!");
+
+
+            active = active->Pop();
+
+        }
 
         void Reset() {
             if (root) {
@@ -92,25 +124,54 @@ namespace PolyhedronFolder {
 
         void Remove(const uint edge) const
         {
+            if (!active)
+                throw std::logic_error("No active polyhedron to remove!");
+
+            if (active->GetEdgeCount() <= edge)
+                throw std::invalid_argument("Edge out of range!\nTried removing " + std::to_string(edge+1)  + "nth edge of " + std::to_string(active->GetEdgeCount()) + "-gon");
+
             active->Remove(edge);
+        }
+
+
+        void SetPivotOfActive(float pivot_val) const
+        {
+            if (!active)
+                throw std::logic_error("No active polyhedron to change pivot of!");
+
+            active->SetPivotVal(pivot_val);
+        }
+
+        void SetEdgeCountOfActive(uint n) const
+        {
+            if(n <= 2)
+            {
+                throw std::invalid_argument("Edge count must be greater than 2!");
+            }
+            active->SetNumberOfEdges(n);
         }
 
         [[nodiscard]] Transform& GetLocalTransform() { return localTransform;}
 
 
         [[nodiscard]] bool IsDirty() const {return isDirty;}
-        void SetFoldVal(const float t) {foldVal = t; isDirty = true;}
+        void SetFoldVal(const float t) {foldState = t; isDirty = true;}
 
         [[nodiscard]] PolyhedronFace *GetActiveFace() const {return active;};
         [[nodiscard]] PolyhedronFace *GetRoot() const {return root;}
     private:
+
+
+
         PolyhedronFace* root = nullptr;
         PolyhedronFace* active = nullptr;
 
         Transform localTransform;
 
         bool isDirty = true;
-        float foldVal = 0.0f;
+        float foldState = 0.0f;
+
+
     };
 }
 

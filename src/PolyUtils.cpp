@@ -51,10 +51,8 @@ Mesh PolyUtils::ConstrPolyFace(uint n, float s) {
 glm::mat4 PolyUtils::CalcTransformMtx(uint toEdge, float n,float parentN) {
     glm::mat4 mtx = glm::mat4(1.0f);
 
-
     float aParent = 1.0f / (2.0f * glm::tan(glm::pi<float>()/parentN));
     float a = 1.0f / (2.0f * glm::tan(glm::pi<float>()/n));
-
 
     float angleOfRotation = glm::two_pi<float>() / parentN;
     float offset = angleOfRotation * 0.5f;
