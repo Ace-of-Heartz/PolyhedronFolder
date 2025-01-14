@@ -4,6 +4,9 @@
 
 #include "ImGuiWidgets.h"
 
+#include <format>
+
+
 #include "glm/glm.hpp"
 #include <glm/gtc/type_ptr.hpp>
 
@@ -12,6 +15,8 @@ void ImGuiWidgets::RenderLightGUI(Light& light)
 
     static auto lightPosXZ = glm::vec2( 0.0f );
     lightPosXZ = glm::vec2( light.GetPosDir().x, light.GetPosDir().z );
+
+
     if ( ImGui::SliderFloat2( "Light Position XZ", glm::value_ptr( lightPosXZ ), -1.0f, 1.0f ) )
     {
         float lightPosL2 = lightPosXZ.x * lightPosXZ.x + lightPosXZ.y * lightPosXZ.y;
@@ -24,42 +29,40 @@ void ImGuiWidgets::RenderLightGUI(Light& light)
         light.SetPosDir(newLightPos);
     }
     ImGui::LabelText( "Light Position Y", "%f", light.GetPosDir().y );
-    ImGui::Bullet();
-    if(ImGui::Button("Ambient"))
-        ImGui::OpenPopup("Ambient");
-    if(ImGui::BeginPopup("Ambient"))
+
+    ImGui::Bullet(); ColorPickerWithButton("Ambient","Ambient",light.GetAmbientComp());
+    ImGui::Bullet(); ColorPickerWithButton("Diffuse","Diffuse",light.GetDiffuseComp());
+    ImGui::Bullet(); ColorPickerWithButton("Specular","Specular",light.GetSpecularComp());
+
+}
+
+void ImGuiWidgets::RenderImage(uint image_id, ImVec2 size, ImVec2 uv1, ImVec2 uv2, ImVec4 tint_col , ImVec4 border_col)
+{
+    ImGui::Image(image_id,size,uv1,uv2,tint_col,border_col);
+}
+
+void ImGuiWidgets::PolyFaceButton(int& id,PolyhedronFolder::PolyhedronFace*& face, PolyhedronFolder::Polyhedron& poly)
+{
+
+    ImGui::Bullet(); ImGui::SameLine();
+    auto name = std::format("{}. {}-NGON",id,face->GetEdgeCount());
+
+    if (ImGui::Button(name.data()))
     {
-        auto ambient = light.GetAmbientComp();
-        if(ImGui::ColorPicker3("Ambient", glm::value_ptr( ambient ) ))
-        {
-            light.SetAmbientComp( ambient );
-        }
-        ImGui::EndPopup();
+        poly.SetActiveFace(face);
     }
-    ImGui::Bullet();
-    if(ImGui::Button("Diffuse"))
-        ImGui::OpenPopup("Diffuse");
-    if(ImGui::BeginPopup("Diffuse"))
-    {
-        auto diffuse = light.GetDiffuseComp();
-        if(ImGui::ColorPicker3("Diffuse", glm::value_ptr( diffuse ) ))
-        {
-            light.SetDiffuseComp( diffuse );
-        }
-        ImGui::EndPopup();
-    }
-    ImGui::Bullet();
-    if(ImGui::Button("Specular"))
-        ImGui::OpenPopup("Specular");
-    if(ImGui::BeginPopup("Specular"))
-    {
-        auto specular = light.GetSpecularComp();
-        if(ImGui::ColorPicker3("Specular", glm::value_ptr( specular ) ))
-        {
-            light.SetSpecularComp( specular );
-        }
-        ImGui::EndPopup();
-    }
+}
 
 
+void ImGuiWidgets::ColorPickerWithButton(const std::string& label,const std::string& popup_id, glm::vec3& color_comp)
+{
+    if(ImGui::Button(label.data()))
+        ImGui::OpenPopup(popup_id.data());
+    if(ImGui::BeginPopup(popup_id.data()))
+    {
+        if(ImGui::ColorPicker3(label.data(), glm::value_ptr( color_comp ) ))
+        {
+        }
+        ImGui::EndPopup();
+    }
 }
