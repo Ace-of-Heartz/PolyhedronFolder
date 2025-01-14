@@ -9,6 +9,7 @@
 
 #include "GLUtils.hpp"
 #include "Transform.h"
+#include <list>
 
 namespace PolyhedronFolder {
     typedef MeshObject<Vertex> Mesh;
@@ -31,8 +32,27 @@ namespace PolyhedronFolder {
         [[nodiscard]] PolyhedronFace* GetNthChildren(const uint n) const { return children[n];}
         [[nodiscard]] float GetPivotVal() const { return pivotVal;}
 
+        [[nodiscard]] std::list<PolyhedronFace*> GetChildrenList()
+        {
+            std::list<PolyhedronFace*> res;
+
+            for (auto child : children)
+            {
+                if (child)
+                {
+                    res.push_back(child);
+                    if (child->IsSingleParent())
+                    {
+                        auto child_list = child->GetChildrenList();
+                        res.insert(res.end(),child_list.begin() , child_list.end());
+                    }
+                }
+            }
+            return res;
+        }
+
     private:
-        PolyhedronFace(uint n,float pivotVal = 0.0f, const glm::mat4 &tfMat = glm::mat4(1.0f),PolyhedronFace* parent = nullptr,bool isRoot = true);
+        PolyhedronFace(uint n,float pivotVal = 0.0f, const glm::mat4 &tfMat = glm::mat4(1.0f),uint edge = -1,PolyhedronFace* parent = nullptr,bool isRoot = true);
         ~PolyhedronFace();
         friend class Polyhedron;
 
@@ -45,15 +65,20 @@ namespace PolyhedronFolder {
         [[nodiscard]] PolyhedronFace* Pop() const {return parent;};
         bool Remove(uint edge);
 
+
         Mesh mesh;
 
         std::vector<PolyhedronFace*> children;
         PolyhedronFace* parent;
+        int parentEdgeIndex;
+
         int activeNeighbourIdx = 0;
 
         unsigned int numberOfEdges = 0;
         float pivotVal = 0.0f;
         glm::mat4 localTransformMtx = glm::mat4(1.0f);
+        float animationState = 0.0f;
+
     };
 
     class Polyhedron
@@ -109,8 +134,9 @@ namespace PolyhedronFolder {
             if(!active)
                 throw std::logic_error("No active polyhedron to pop out of!");
 
-
-            active = active->Pop();
+            auto p = active->Pop();
+            if (p)
+                active = p;
 
         }
 
@@ -151,14 +177,39 @@ namespace PolyhedronFolder {
             active->SetNumberOfEdges(n);
         }
 
+        [[nodiscard]] std::list<PolyhedronFace*> GetFaceList() const
+        {
+            if (root)
+            {
+                std::list<PolyhedronFace*> res;
+                res.push_back(root);
+
+                auto root_list = root->GetChildrenList();
+
+
+                res.insert(res.end(),root_list.begin(),root_list.end());
+
+                return res;
+            }
+            else
+                return {};
+        }
+
         [[nodiscard]] Transform& GetLocalTransform() { return localTransform;}
 
 
         [[nodiscard]] bool IsDirty() const {return isDirty;}
-        void SetFoldVal(const float t) {foldState = t; isDirty = true;}
+        void SetFoldVal(const float t) {animationState = t; isDirty = true;}
 
         [[nodiscard]] PolyhedronFace *GetActiveFace() const {return active;};
         [[nodiscard]] PolyhedronFace *GetRoot() const {return root;}
+
+
+        void SetActiveFace(PolyhedronFace* face)
+        {
+            if (face)
+                active = face;
+        }
     private:
 
 
@@ -169,7 +220,7 @@ namespace PolyhedronFolder {
         Transform localTransform;
 
         bool isDirty = true;
-        float foldState = 0.0f;
+        float animationState = 0.0f;
 
 
     };

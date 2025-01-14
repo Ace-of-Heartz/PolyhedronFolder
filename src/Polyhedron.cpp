@@ -22,12 +22,14 @@ PolyhedronFace::PolyhedronFace(
     const uint n,
     const float pivotVal,
     const glm::mat4 &tfMat,
+    const uint edge,
     PolyhedronFace* parent,
     bool isRoot
     )
-: numberOfEdges(n), pivotVal(pivotVal), localTransformMtx(tfMat), parent(parent), mesh(PolyUtils::ConstrPolyFace(n,1)) {
+:  parentEdgeIndex(edge),numberOfEdges(n), pivotVal(pivotVal), localTransformMtx(tfMat), parent(parent), mesh(PolyUtils::ConstrPolyFace(n,1)) {
     children.resize(n);
 }
+
 
 PolyhedronFace::~PolyhedronFace() {
 }
@@ -36,13 +38,18 @@ void PolyhedronFace::SetNumberOfEdges(uint newNumberOfEdges)
 {
     this->mesh = PolyUtils::ConstrPolyFace(newNumberOfEdges, 1);
 
+    if (parent)
+    {
+        this->localTransformMtx = PolyUtils::CalcTransformMtx(parentEdgeIndex,newNumberOfEdges,parent->GetEdgeCount());
+    }
+
     std::vector<PolyhedronFace*> newChildren;
     newChildren.resize(newNumberOfEdges);
 
     uint i = 0;
-    for (; i < newNumberOfEdges; i++)
+    for (; i < newNumberOfEdges && i < this->numberOfEdges; i++)
     {
-        if(children[i] != nullptr)
+        if(children[i])
         {
             this->children[i]->SetTransformMatrix(PolyUtils::CalcTransformMtx(i,this->children[i]->GetEdgeCount(),newNumberOfEdges));
             newChildren[i] = this->children[i];
@@ -52,7 +59,7 @@ void PolyhedronFace::SetNumberOfEdges(uint newNumberOfEdges)
 
     for (; i < this->numberOfEdges; i++)
     {
-        if(children[i] != nullptr)
+        if(children[i])
         {
             this->Remove(i);
         }
@@ -81,7 +88,7 @@ void PolyhedronFace::Add(uint edge, uint n, float pivotVal) {
 
     auto tfMat = PolyUtils::CalcTransformMtx(edge,n,numberOfEdges);
 
-    children[edge] = new PolyhedronFace(n,pivotVal,tfMat,this,false); //TODO: Calc transform matrix ....
+    children[edge] = new PolyhedronFace(n,pivotVal,tfMat,edge,this,false); //TODO: Calc transform matrix ....
 }
 
 PolyhedronFace* PolyhedronFace::Push(uint edge, const uint n, float pivotVal) {
@@ -92,7 +99,7 @@ PolyhedronFace* PolyhedronFace::Push(uint edge, const uint n, float pivotVal) {
 
     auto tfMat = PolyUtils::CalcTransformMtx(edge,n,numberOfEdges);
 
-    children[edge] = new PolyhedronFace(n,pivotVal,tfMat,this,false); // TODO: Calc transform matrix ....
+    children[edge] = new PolyhedronFace(n,pivotVal,tfMat,edge,this,false); // TODO: Calc transform matrix ....
     return children[edge];
 }
 
@@ -202,7 +209,7 @@ Mesh Polyhedron::GetTransformedMesh(const glm::vec3& cameraPos,const bool setToO
     auto res = Mesh();
 
     if (root) {
-        res = root->GetTransformedMesh(foldState,setToOrigin ? mat4(1) : localTransform.GetTransformMatrix(),cameraPos);
+        res = root->GetTransformedMesh(animationState,setToOrigin ? mat4(1) : localTransform.GetTransformMatrix(),cameraPos);
     }
     isDirty = false;
 
