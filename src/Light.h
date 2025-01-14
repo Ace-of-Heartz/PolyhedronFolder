@@ -14,10 +14,10 @@ public:
     Light(glm::vec4 posDir,glm::vec3 lAmbient, glm::vec3 lDiffuse, glm::vec3 lSpecular)
     : m_posDir(posDir),m_La(lAmbient), m_Ld(lDiffuse), m_Ls(lSpecular) {}
 
-    [[nodiscard]] glm::vec4 GetPosDir() const {return m_posDir;}
-    [[nodiscard]] glm::vec3 GetAmbientComp() const {return m_La;};
-    [[nodiscard]] glm::vec3 GetDiffuseComp() const {return m_Ld;};
-    [[nodiscard]] glm::vec3 GetSpecularComp() const {return m_Ls;};
+    [[nodiscard]] glm::vec4& GetPosDir() {return m_posDir;}
+    [[nodiscard]] glm::vec3& GetAmbientComp() {return m_La;};
+    [[nodiscard]] glm::vec3& GetDiffuseComp() {return m_Ld;};
+    [[nodiscard]] glm::vec3& GetSpecularComp() {return m_Ls;};
 
     void SetPosDir(glm::vec4 posDir) {m_posDir = posDir;}
 
