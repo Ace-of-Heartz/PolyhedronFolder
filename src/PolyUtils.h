@@ -66,6 +66,7 @@ namespace PolyhedronFolder {
 
         static float CalcDefaultAngleBetween(float n, float m, float o);
 
+
     private:
         inline static std::unordered_map<size_t, float> defaultAngles;
     };
