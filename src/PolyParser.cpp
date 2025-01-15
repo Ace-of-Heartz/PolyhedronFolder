@@ -62,6 +62,8 @@ void PolyParser::Parse(Polyhedron &polyhedron) {
                 uint n;
 
                 string_view nT = tokenizer.NextToken();
+
+                if (nT.empty()) throw invalid_argument("Invalid input: Expected polygon edge count");
                 from_chars(nT.data(), nT.data() + nT.size(), n);
 
                 polyhedron.Start(n);
@@ -72,13 +74,15 @@ void PolyParser::Parse(Polyhedron &polyhedron) {
                 float pivot;
 
                 string_view edgeT = tokenizer.NextToken(true);
+                std::string_view nT = tokenizer.NextToken(true);
+                std::string_view pivotT = tokenizer.NextToken(true);
+
+                if (edgeT.empty()) throw invalid_argument("Invalid input: Expected edge ID");
                 from_chars(edgeT.data(), edgeT.data() + edgeT.size(), edge);
 
-                std::string_view nT = tokenizer.NextToken(true);
                 if(nT.empty()) n = lastNAdd;
                 else from_chars(nT.data(), nT.data() + nT.size(), n);
 
-                std::string_view pivotT = tokenizer.NextToken(true);
                 if(pivotT.empty()) pivot = PolyUtils::GetDefaultAngle(polyhedron.GetActiveFace()->GetEdgeCount(),n);
                 else from_chars(pivotT.data(), pivotT.data() + pivotT.size(), pivot);
 
@@ -91,14 +95,16 @@ void PolyParser::Parse(Polyhedron &polyhedron) {
                 float pivot;
 
                 string_view edgeT = tokenizer.NextToken(true);
+                std::string_view nT = tokenizer.NextToken(true);
+                std::string_view pivotT = tokenizer.NextToken(true);
+
+                if (edgeT.empty()) throw invalid_argument("Invalid input: Expected edge ID");
                 from_chars(edgeT.data(), edgeT.data() + edgeT.size(), edge);
 
-                std::string_view nT = tokenizer.NextToken(true);
+
                 if(nT.empty()) n = lastNAdd;
                 else from_chars(nT.data(), nT.data() + nT.size(), n);
 
-                std::cout << n << std::endl;
-                std::string_view pivotT = tokenizer.NextToken(true);
                 if(pivotT.empty()) pivot = PolyUtils::GetDefaultAngle(polyhedron.GetActiveFace()->GetEdgeCount(),n);
                 else from_chars(pivotT.data(), pivotT.data() + pivotT.size(), pivot);
 
@@ -113,26 +119,33 @@ void PolyParser::Parse(Polyhedron &polyhedron) {
                 uint n, m;
                 float pivot;
                 string_view nT = tokenizer.NextToken(true);
-                from_chars(nT.data(), nT.data() + nT.size(), n);
-
                 string_view mT = tokenizer.NextToken(true);
-                from_chars(mT.data(), mT.data() + mT.size(), m);
-
                 string_view pivotT = tokenizer.NextToken(true);
-                from_chars(pivotT.data(), pivotT.data() + pivotT.size(), pivot);
 
+                if (nT.empty() || mT.empty() || pivotT.empty())
+                {
+                    throw invalid_argument("Invalid input: Expected two integers and a real number");
+                }
+
+                from_chars(nT.data(), nT.data() + nT.size(), n);
+                from_chars(mT.data(), mT.data() + mT.size(), m);
+                from_chars(pivotT.data(), pivotT.data() + pivotT.size(), pivot);
                 PolyUtils::SetDefaultAngle(n,m,pivot);
 
             } break;
             case str2int("PIVOT_POLY"): {
                 uint n,m,o;
                 string_view nT = tokenizer.NextToken(true);
-                from_chars(nT.data(), nT.data() + nT.size(), n);
-
                 string_view mT = tokenizer.NextToken(true);
-                from_chars(mT.data(), mT.data() + mT.size(), m);
-
                 string_view oT = tokenizer.NextToken(true);
+
+                if (nT.empty() || mT.empty() || oT.empty())
+                {
+                    throw invalid_argument("Invalid input: Expected three integers");
+                }
+
+                from_chars(nT.data(), nT.data() + nT.size(), n);
+                from_chars(mT.data(), mT.data() + mT.size(), m);
                 from_chars(oT.data(), oT.data() + oT.size(), o);
 
                 PolyUtils::SetDefaultAngle(n,m,PolyUtils::CalcDefaultAngleBetween(n,m,o));
@@ -141,12 +154,16 @@ void PolyParser::Parse(Polyhedron &polyhedron) {
             case str2int("PIVOT_VERTEX"): {
                 uint n,m,o;
                 string_view nT = tokenizer.NextToken(true);
-                from_chars(nT.data(), nT.data() + nT.size(), n);
-
                 string_view mT = tokenizer.NextToken(true);
-                from_chars(mT.data(), mT.data() + mT.size(), m);
-
                 string_view oT = tokenizer.NextToken(true);
+
+                if (nT.empty() || mT.empty() || oT.empty())
+                {
+                    throw invalid_argument("Invalid input: Expected three integers");
+                }
+
+                from_chars(nT.data(), nT.data() + nT.size(), n);
+                from_chars(mT.data(), mT.data() + mT.size(), m);
                 from_chars(oT.data(), oT.data() + oT.size(), o);
 
                 PolyUtils::SetDefaultAngle(n,m,PolyUtils::CalcDefaultAngleBetween(n,m,o));
@@ -172,22 +189,28 @@ void PolyParser::Parse(Polyhedron &polyhedron) {
             } break;
             case str2int("SET_N"):
             {
-                    uint n;
-                    string_view nT = tokenizer.NextToken(true);
-                    from_chars(nT.data(), nT.data() + nT.size(), n);
-                    polyhedron.SetEdgeCountOfActive(n);
+                uint n;
+                string_view nT = tokenizer.NextToken(true);
+
+                if (nT.empty()) throw invalid_argument("Invalid input: Expected polygon edge count");
+
+                from_chars(nT.data(), nT.data() + nT.size(), n);
+                polyhedron.SetEdgeCountOfActive(n);
 
             } break;
             case str2int("SET_PIVOT"):
                 {
                     float p;
                     string_view pT = tokenizer.NextToken(true);
+
+                    if (pT.empty()) throw invalid_argument("Invalid input: Expected pivot value");
                     from_chars(pT.data(), pT.data() + pT.size(), p);
                     polyhedron.SetPivotOfActive(p);
                 } break;
             case str2int("REMOVE"): {
                 uint edge;
                 string_view edgeT = tokenizer.NextToken(true);
+                if (edgeT.empty()) throw invalid_argument("Invalid input: Expected edge ID");
                 from_chars(edgeT.data(), edgeT.data() + edgeT.size(), edge);
                 polyhedron.Remove(edge);
             } break;

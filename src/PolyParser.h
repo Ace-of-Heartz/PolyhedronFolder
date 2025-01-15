@@ -25,8 +25,8 @@ namespace PolyhedronFolder {
         enum Exception { EXC_FILENOTFOUND };
 
     private:
-        inline static uint lastNAdd = -1;
-        inline static uint lastNPush = -1;
+        inline static uint lastNAdd = 3;
+        inline static uint lastNPush = 3;
 
         inline static std::vector<char> polyRawData;
         inline static InMemoryTokenizer tokenizer;
