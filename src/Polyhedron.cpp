@@ -103,17 +103,15 @@ PolyhedronFace* PolyhedronFace::Push(uint edge, const uint n, float pivotVal) {
     return children[edge];
 }
 
-bool PolyhedronFace::Remove(const uint edge)
+void PolyhedronFace::Remove(const uint edge)
 {
-    if (children[edge] != nullptr)
+    if (children[edge])
     {
         auto temp = children[edge];
         children[edge] = nullptr;
         delete temp;
-        return false;
     }
 }
-
 
 
 Mesh PolyhedronFace::GetTransformedMesh(
@@ -123,7 +121,12 @@ Mesh PolyhedronFace::GetTransformedMesh(
 
     auto tfMat = glm::mat4(1);
     if (parent)
-        tfMat = GetFoldTransformationMatrix(t);
+    {
+        if (freezeState == UNFREEZE)
+            tfMat = GetFoldTransformationMatrix(t);
+        else
+            tfMat = GetFoldTransformationMatrix(animationState);
+    }
 
     std::vector<Vertex> transformedVertices;
     transformedVertices.reserve(mesh.vertexArray.size());
@@ -157,7 +160,18 @@ Mesh PolyhedronFace::GetTransformedMesh(
 
     for(auto &c : children) {
         if (c) {
-            auto cMesh = c->GetTransformedMesh(t,tfMat,cameraPos);
+
+            Mesh cMesh;
+            if (freezeState == FREEZE_BRANCH)
+            {
+                cMesh = c->GetTransformedMesh(animationState,tfMat,cameraPos);
+
+            } else
+            {
+                cMesh = c->GetTransformedMesh(t,tfMat,cameraPos);
+            }
+
+
             mMesh += cMesh;
         }
     }

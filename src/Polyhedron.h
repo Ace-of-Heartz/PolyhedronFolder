@@ -31,6 +31,36 @@ namespace PolyhedronFolder {
         }
         [[nodiscard]] PolyhedronFace* GetNthChildren(const uint n) const { return children[n];}
         [[nodiscard]] float GetPivotVal() const { return pivotVal;}
+        [[nodiscard]] void SetAnimationState(const float animationState) { this->animationState = animationState;}
+        [[nodiscard]] float GetAnimationState() const { return animationState;}
+
+
+        enum FreezeState
+        {
+            FREEZE_BRANCH,
+            FREEZE_NODE,
+            UNFREEZE,
+
+        };
+
+        [[nodiscard]] FreezeState GetFreezeState() const { return freezeState;}
+        void ToggleFreeze()
+        {
+            switch (freezeState)
+            {
+                case UNFREEZE:
+                    freezeState = FREEZE_NODE;
+                    break;
+                case FREEZE_NODE:
+                    freezeState = FREEZE_BRANCH;
+                    break;
+                case FREEZE_BRANCH:
+                    freezeState = UNFREEZE;
+                    break;
+            }
+        }
+       void SetFreezeState(const FreezeState state) { freezeState = state;}
+
 
         [[nodiscard]] std::list<PolyhedronFace*> GetChildrenList()
         {
@@ -51,6 +81,9 @@ namespace PolyhedronFolder {
             return res;
         }
 
+        void SetActiveState(bool state) {activeState = state;}
+        [[nodiscard]] bool IsActive() const { return activeState;}
+
     private:
         PolyhedronFace(uint n,float pivotVal = 0.0f, const glm::mat4 &tfMat = glm::mat4(1.0f),uint edge = -1,PolyhedronFace* parent = nullptr,bool isRoot = true);
         ~PolyhedronFace();
@@ -63,7 +96,7 @@ namespace PolyhedronFolder {
         void Add(uint edge,uint n, float pivotVal = glm::half_pi<float>());
         [[nodiscard]] PolyhedronFace* Push(uint edge,uint n, float pivotVal = glm::half_pi<float>());
         [[nodiscard]] PolyhedronFace* Pop() const {return parent;};
-        bool Remove(uint edge);
+        void Remove(uint edge);
 
 
         Mesh mesh;
@@ -71,13 +104,15 @@ namespace PolyhedronFolder {
         std::vector<PolyhedronFace*> children;
         PolyhedronFace* parent;
         int parentEdgeIndex;
+        bool activeState = false;
 
-        int activeNeighbourIdx = 0;
+        glm::mat4 localTransformMtx = glm::mat4(1.0f);
 
         unsigned int numberOfEdges = 0;
         float pivotVal = 0.0f;
-        glm::mat4 localTransformMtx = glm::mat4(1.0f);
+
         float animationState = 0.0f;
+        FreezeState freezeState = UNFREEZE;
 
     };
 
@@ -96,8 +131,12 @@ namespace PolyhedronFolder {
 
             root = new PolyhedronFace(n);
             active = root;
+            SetActive();
             isDirty = true;
         }
+
+        void UnsetActive() const {active ->SetActiveState(false);}
+        void SetActive() const {active->SetActiveState(true);}
 
         void Add(uint edge, uint n, float pivot_val = glm::half_pi<float>()) {
             if (!active)
@@ -124,8 +163,10 @@ namespace PolyhedronFolder {
             if (n <= 2)
                 throw std::invalid_argument("Edge count must be greater than 2!");
 
-
+            UnsetActive();
             active = active->Push(edge,n,pivot_val);
+            SetActive();
+
             isDirty = true;
         }
 
@@ -134,9 +175,13 @@ namespace PolyhedronFolder {
             if(!active)
                 throw std::logic_error("No active polyhedron to pop out of!");
 
+            UnsetActive();
             auto p = active->Pop();
             if (p)
+            {
                 active = p;
+                SetActive();
+            }
 
         }
 
@@ -226,7 +271,11 @@ namespace PolyhedronFolder {
         void SetActiveFace(PolyhedronFace* face)
         {
             if (face)
+            {
+                UnsetActive();
                 active = face;
+                SetActive();
+            }
         }
     private:
 
