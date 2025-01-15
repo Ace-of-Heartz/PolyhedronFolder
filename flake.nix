@@ -5,6 +5,7 @@
     nixpkgs = {
         url = "github:NixOS/nixpkgs/nixos-unstable";
     };
+
   };
 
   outputs = inputs@{ flake-parts, ... }:
@@ -16,7 +17,7 @@
       perSystem = { config, self', inputs', pkgs, system, ... }: {
         # The `callPackage` automatically fills the parameters of the function
         # in package.nix with what's inside the `pkgs` attribute.
-        packages.default = pkgs.callPackage ./packages.nix { };
+        packages.default = pkgs.callPackage ./packages.nix {stdenv = pkgs.clangStdenv;};
 
         # The `config` variable contains our own outputs, so we can reference
         # neighbor attributes like the package we just defined one line earlier.

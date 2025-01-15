@@ -125,6 +125,10 @@ protected:
 	// Polyhedron Object
 	glm::mat4 m_baseObjTransform = glm::mat4(1.0f);
 
+	// UI
+	bool m_errorHappened;
+	std::string m_errorMessage;
+
 
 	// Geometria inicializálása, és törtlése
 	void InitGeometry();

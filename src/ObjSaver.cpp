@@ -11,7 +11,7 @@ void ObjSaver::SaveTo(const std::string& filename,const IndexedMeshObject& mesh,
 
     if(!outputStrm.is_open())
     {
-        throw std::runtime_error("Error in ObjSaver::SaveTo(): File couldn't be opened.");
+        throw std::runtime_error("Error: File couldn't be opened.");
     }
 
     WriteObject(objectName);

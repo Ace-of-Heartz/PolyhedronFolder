@@ -22,12 +22,14 @@ PolyhedronFace::PolyhedronFace(
     const uint n,
     const float pivotVal,
     const glm::mat4 &tfMat,
+    const uint edge,
     PolyhedronFace* parent,
     bool isRoot
     )
-: numberOfEdges(n), pivotVal(pivotVal), localTransformMtx(tfMat), parent(parent), mesh(PolyUtils::ConstrPolyFace(n,1)) {
+:  parentEdgeIndex(edge),numberOfEdges(n), pivotVal(pivotVal), localTransformMtx(tfMat), parent(parent), mesh(PolyUtils::ConstrPolyFace(n,1)) {
     children.resize(n);
 }
+
 
 PolyhedronFace::~PolyhedronFace() {
 }
@@ -36,13 +38,18 @@ void PolyhedronFace::SetNumberOfEdges(uint newNumberOfEdges)
 {
     this->mesh = PolyUtils::ConstrPolyFace(newNumberOfEdges, 1);
 
+    if (parent)
+    {
+        this->localTransformMtx = PolyUtils::CalcTransformMtx(parentEdgeIndex,newNumberOfEdges,parent->GetEdgeCount());
+    }
+
     std::vector<PolyhedronFace*> newChildren;
     newChildren.resize(newNumberOfEdges);
 
     uint i = 0;
-    for (; i < newNumberOfEdges; i++)
+    for (; i < newNumberOfEdges && i < this->numberOfEdges; i++)
     {
-        if(children[i] != nullptr)
+        if(children[i])
         {
             this->children[i]->SetTransformMatrix(PolyUtils::CalcTransformMtx(i,this->children[i]->GetEdgeCount(),newNumberOfEdges));
             newChildren[i] = this->children[i];
@@ -52,7 +59,7 @@ void PolyhedronFace::SetNumberOfEdges(uint newNumberOfEdges)
 
     for (; i < this->numberOfEdges; i++)
     {
-        if(children[i] != nullptr)
+        if(children[i])
         {
             this->Remove(i);
         }
@@ -81,7 +88,7 @@ void PolyhedronFace::Add(uint edge, uint n, float pivotVal) {
 
     auto tfMat = PolyUtils::CalcTransformMtx(edge,n,numberOfEdges);
 
-    children[edge] = new PolyhedronFace(n,pivotVal,tfMat,this,false); //TODO: Calc transform matrix ....
+    children[edge] = new PolyhedronFace(n,pivotVal,tfMat,edge,this,false); //TODO: Calc transform matrix ....
 }
 
 PolyhedronFace* PolyhedronFace::Push(uint edge, const uint n, float pivotVal) {
@@ -92,27 +99,19 @@ PolyhedronFace* PolyhedronFace::Push(uint edge, const uint n, float pivotVal) {
 
     auto tfMat = PolyUtils::CalcTransformMtx(edge,n,numberOfEdges);
 
-    children[edge] = new PolyhedronFace(n,pivotVal,tfMat,this,false); // TODO: Calc transform matrix ....
+    children[edge] = new PolyhedronFace(n,pivotVal,tfMat,edge,this,false); // TODO: Calc transform matrix ....
     return children[edge];
 }
 
-bool PolyhedronFace::Remove(const uint edge)
+void PolyhedronFace::Remove(const uint edge)
 {
-    if (edge > numberOfEdges)
-    {
-        throw std::invalid_argument("PolyhedronFace::Remove : Bad edge index");
-
-    }
-
-    if (children[edge] != nullptr)
+    if (children[edge])
     {
         auto temp = children[edge];
         children[edge] = nullptr;
         delete temp;
-        return false;
     }
 }
-
 
 
 Mesh PolyhedronFace::GetTransformedMesh(
@@ -122,7 +121,12 @@ Mesh PolyhedronFace::GetTransformedMesh(
 
     auto tfMat = glm::mat4(1);
     if (parent)
-        tfMat = GetFoldTransformationMatrix(t);
+    {
+        if (freezeState == UNFREEZE)
+            tfMat = GetFoldTransformationMatrix(t);
+        else
+            tfMat = GetFoldTransformationMatrix(animationState);
+    }
 
     std::vector<Vertex> transformedVertices;
     transformedVertices.reserve(mesh.vertexArray.size());
@@ -143,18 +147,31 @@ Mesh PolyhedronFace::GetTransformedMesh(
         auto posToCamera = cameraPos - glm::vec3(tfPos.x,tfPos.y,tfPos.z);
         isFacingAway = glm::dot(posToCamera,glm::vec3(tfNorm.x,tfNorm.y,tfNorm.z)) < 0.0f;
 
+
+
         if(isFacingAway) {
             tfNorm *= -1.0f;
         }
 
-        transformedVertices.push_back({ glm::vec3(tfPos.x,tfPos.y,tfPos.z),glm::vec3(tfNorm.x,tfNorm.y,tfNorm.z),v.texcoord});
+        transformedVertices.push_back({ glm::vec3(tfPos.x,tfPos.y,tfPos.z) / tfPos.w,glm::vec3(tfNorm.x,tfNorm.y,tfNorm.z) / abs(tfNorm.w),v.texcoord});
 
     }
     Mesh mMesh = Mesh{transformedVertices,mesh.indexArray,isFacingAway};
 
     for(auto &c : children) {
         if (c) {
-            auto cMesh = c->GetTransformedMesh(t,tfMat,cameraPos);
+
+            Mesh cMesh;
+            if (freezeState == FREEZE_BRANCH)
+            {
+                cMesh = c->GetTransformedMesh(animationState,tfMat,cameraPos);
+
+            } else
+            {
+                cMesh = c->GetTransformedMesh(t,tfMat,cameraPos);
+            }
+
+
             mMesh += cMesh;
         }
     }
@@ -208,7 +225,7 @@ Mesh Polyhedron::GetTransformedMesh(const glm::vec3& cameraPos,const bool setToO
     auto res = Mesh();
 
     if (root) {
-        res = root->GetTransformedMesh(foldVal,setToOrigin ? mat4(1) : localTransform.GetTransformMatrix(),cameraPos);
+        res = root->GetTransformedMesh(animationState,setToOrigin ? mat4(1) : localTransform.GetTransformMatrix(),cameraPos);
     }
     isDirty = false;
 
