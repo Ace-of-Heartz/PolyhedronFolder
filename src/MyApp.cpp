@@ -563,7 +563,7 @@ void CMyApp::RenderGUI()
                 ImGui::EndTabItem();
             }
 
-            if (ImGui::BeginTabItem("Faces"))
+            if (ImGui::BeginTabItem("Data"))
             {
                 if(ImGui::BeginListBox("Faces"))
                 {
@@ -579,6 +579,9 @@ void CMyApp::RenderGUI()
 
                     ImGui::EndListBox();
                 }
+
+                ImGuiWidgets::RenderPivotTable();
+
                 ImGui::EndTabItem();
             }
 
