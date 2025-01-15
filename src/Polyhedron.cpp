@@ -144,11 +144,13 @@ Mesh PolyhedronFace::GetTransformedMesh(
         auto posToCamera = cameraPos - glm::vec3(tfPos.x,tfPos.y,tfPos.z);
         isFacingAway = glm::dot(posToCamera,glm::vec3(tfNorm.x,tfNorm.y,tfNorm.z)) < 0.0f;
 
+
+
         if(isFacingAway) {
             tfNorm *= -1.0f;
         }
 
-        transformedVertices.push_back({ glm::vec3(tfPos.x,tfPos.y,tfPos.z),glm::vec3(tfNorm.x,tfNorm.y,tfNorm.z),v.texcoord});
+        transformedVertices.push_back({ glm::vec3(tfPos.x,tfPos.y,tfPos.z) / tfPos.w,glm::vec3(tfNorm.x,tfNorm.y,tfNorm.z) / abs(tfNorm.w),v.texcoord});
 
     }
     Mesh mMesh = Mesh{transformedVertices,mesh.indexArray,isFacingAway};
