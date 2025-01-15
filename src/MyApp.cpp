@@ -174,12 +174,12 @@ void CMyApp::Update(const SUpdateInfo& updateInfo)
         else if (m_animationState >= 1.0f)
         {
             m_currentFoldValue = 2.0f - m_animationState;
-            m_Polyhedron.SetFoldVal(m_currentFoldValue);
+            m_Polyhedron.SetAnimationState(m_currentFoldValue);
         }
         else
         {
             m_currentFoldValue = m_animationState;
-            m_Polyhedron.SetFoldVal(m_currentFoldValue);
+            m_Polyhedron.SetAnimationState(m_currentFoldValue);
         }
     }
 
@@ -340,7 +340,14 @@ void CMyApp::RenderGUI()
 
                 if (ImGui::Button("Save"))
                 {
-                    PolySaver::SaveTo(path_buffer, m_Polyhedron);
+                    try
+                    {
+                        PolySaver::SaveTo(path_buffer, m_Polyhedron);
+                    } catch (std::logic_error e)
+                    {
+                        m_errorHappened = true;
+                        m_errorMessage = e.what();
+                    }
                 }
 
                 ImGui::EndPopup();
@@ -463,6 +470,34 @@ void CMyApp::RenderGUI()
                     m_Polyhedron.GetLocalTransform().SetScalingComponent(scale);
                 }
 
+                ImGui::Separator();
+
+                if (m_Polyhedron.IsInstantiated())
+                {
+                    int number_of_edges = m_Polyhedron.GetActiveFace()->GetEdgeCount();
+                    if(ImGui::InputInt("Number of edges:", &number_of_edges,1,5))
+                    {
+                        if (number_of_edges < 3)
+                        {
+                            number_of_edges = 3;
+                        }
+                    }
+                    if(ImGui::IsItemDeactivatedAfterEdit())
+                    {
+                        m_Polyhedron.SetEdgeCountOfActive(number_of_edges);
+                    }
+
+                    float max_pivot_val = (m_Polyhedron.GetActiveFace()->GetPivotVal());
+                    if (ImGui::SliderFloat("Pivot value",&max_pivot_val,0,glm::two_pi<float>()))
+                    {
+                        m_Polyhedron.SetPivotOfActive(max_pivot_val);
+                    }
+
+                }
+
+
+
+
                 ImGui::EndTabItem();
             }
 
@@ -481,7 +516,7 @@ void CMyApp::RenderGUI()
                     m_animate = false;
 
                     m_animationState = m_currentFoldValue;
-                    m_Polyhedron.SetFoldVal(m_currentFoldValue);
+                    m_Polyhedron.SetAnimationState(m_currentFoldValue);
                 }
 
                 static bool focusOnInput = false;
