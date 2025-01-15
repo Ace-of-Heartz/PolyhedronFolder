@@ -42,6 +42,11 @@ namespace PolyhedronFolder {
 
         static void SetDefaultAngle(const uint& n, const uint& m, float angle) {
 
+            if (n < 3 || m < 3)
+            {
+                throw std::invalid_argument("Invalid edge counts!");
+            }
+
             auto keyVal = n <= m ? key(n,m) : key(m,n);
 
             if (defaultAngles.contains(keyVal))
@@ -55,6 +60,9 @@ namespace PolyhedronFolder {
         }
 
         static void SetDefaultAngle(const std::pair<uint,uint>& n, float a) {
+
+            if (n.first < 3 || n.second < 3)
+                throw std::invalid_argument("Invalid edge counts!");
 
             auto keyVal = n.first <= n.second ? key(n.first,n.second) : key(n.second,n.first);
 
