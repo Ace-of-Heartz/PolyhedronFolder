@@ -170,6 +170,11 @@ namespace PolyhedronFolder {
 
         void SetEdgeCountOfActive(uint n) const
         {
+            if (!active)
+            {
+                throw std::logic_error("No active polyhedron to change edge count!");
+            }
+
             if(n <= 2)
             {
                 throw std::invalid_argument("Edge count must be greater than 2!");
@@ -199,11 +204,24 @@ namespace PolyhedronFolder {
 
 
         [[nodiscard]] bool IsDirty() const {return isDirty;}
-        void SetFoldVal(const float t) {animationState = t; isDirty = true;}
+        void SetAnimationState(const float t) {animationState = t; isDirty = true;}
 
-        [[nodiscard]] PolyhedronFace *GetActiveFace() const {return active;};
-        [[nodiscard]] PolyhedronFace *GetRoot() const {return root;}
+        [[nodiscard]] PolyhedronFace *GetActiveFace() const
+        {
+            if (!active)
+                throw std::logic_error("No active polyhedron to query!");
 
+            return active;
+        };
+        [[nodiscard]] PolyhedronFace *GetRoot() const
+        {
+            if (!root)
+                throw std::logic_error("No active polyhedron to query!");
+            return root;
+        }
+
+
+        [[nodiscard]] bool IsInstantiated() const { return root != nullptr;}
 
         void SetActiveFace(PolyhedronFace* face)
         {
