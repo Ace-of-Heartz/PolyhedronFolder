@@ -317,6 +317,7 @@ void CMyApp::RenderGUI()
     static bool show_poly_settings = true;
     static bool show_object_settings = false;
     static bool show_misc_settings = false;
+    static bool show_data_overview = true;
 
     if (ImGui::BeginMainMenuBar())
     {
@@ -383,6 +384,7 @@ void CMyApp::RenderGUI()
             ImGui::Text("Window Visibility");
             ImGui::Checkbox("Lighting", &show_lighting_settings);
             ImGui::Checkbox("Polyhedron", &show_poly_settings);
+            ImGui::Checkbox("Data Overview",&show_data_overview);
             ImGui::Checkbox("Object", &show_object_settings);
             ImGui::Checkbox("Misc.", &show_misc_settings);
             ImGui::Separator();
@@ -446,9 +448,9 @@ void CMyApp::RenderGUI()
         ImGui::End();
     }
 
-    if (show_poly_settings && ImGui::Begin("Polygon Settings"))
+    if (show_poly_settings && ImGui::Begin("Polyhedron Settings"))
     {
-        if (ImGui::BeginTabBar("Polygon Settings"))
+        if (ImGui::BeginTabBar("Polyhedron Settings"))
         {
             if (ImGui::BeginTabItem("Attributes"))
             {
@@ -487,7 +489,7 @@ void CMyApp::RenderGUI()
                         m_Polyhedron.SetEdgeCountOfActive(number_of_edges);
                     }
 
-                    float max_pivot_val = (m_Polyhedron.GetActiveFace()->GetPivotVal());
+                    float max_pivot_val = m_Polyhedron.GetActiveFace()->GetPivotVal();
                     if (ImGui::SliderFloat("Pivot value",&max_pivot_val,0,glm::two_pi<float>()))
                     {
                         m_Polyhedron.SetPivotOfActive(max_pivot_val);
@@ -563,28 +565,6 @@ void CMyApp::RenderGUI()
                 ImGui::EndTabItem();
             }
 
-            if (ImGui::BeginTabItem("Data"))
-            {
-                if(ImGui::BeginListBox("Faces"))
-                {
-                    int idx = 1;
-                    for (auto &f : m_Polyhedron.GetFaceList())
-                    {
-                        // ImGui::PushID(idx);
-                        ImGuiWidgets::PolyFaceButton(idx,f,m_Polyhedron);
-                        // ImGui::PopID();
-
-                        ++idx;
-                    }
-
-                    ImGui::EndListBox();
-                }
-
-                ImGuiWidgets::RenderPivotTable();
-
-                ImGui::EndTabItem();
-            }
-
             if(ImGui::BeginTabItem("Information"))
             {
                 auto addBullet = [](const char* commandName, const char* commandDesc)
@@ -621,6 +601,24 @@ void CMyApp::RenderGUI()
             ImGui::EndTabBar();
         }
 
+        ImGui::End();
+    }
+
+    if (show_data_overview && ImGui::Begin("Data Overview"))
+    {
+        if(ImGui::BeginTabBar("Data"))
+        {
+            if (ImGui::BeginTabItem("Data"))
+            {
+
+                ImGuiWidgets::RenderPolygonTable(m_Polyhedron);
+
+                ImGuiWidgets::RenderPivotTable();
+
+                ImGui::EndTabItem();
+            }
+            ImGui::EndTabBar();
+        }
         ImGui::End();
     }
 
