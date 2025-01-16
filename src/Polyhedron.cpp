@@ -200,7 +200,8 @@ glm::mat4 PolyhedronFace::GetFoldTransformationMatrix(const float t) const {
     }
 
     if(parent) {
-        const float radian = std::lerp(0.f,pivotVal,t);
+        // const float radian = std::lerp(0.f,pivotVal,t);
+        const float radian = glm::smoothstep(0.f,1.0f,t) * pivotVal;
 
         const float N = numberOfEdges;
         const float R = 1.0f / (2.0f * glm::sin(glm::pi<float>()/N));
