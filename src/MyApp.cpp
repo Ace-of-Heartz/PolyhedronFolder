@@ -787,7 +787,7 @@ void CMyApp::OtherEvent(const SDL_Event& ev)
 
             m_PolyhedronObject = ObjectWrapper(CreateGLObjectFromMesh(mesh, vertexAttribList));
         }
-        else if (filename.rfind(".png") != std::string::npos)
+        else if (filename.rfind(".png") != std::string::npos || filename.rfind(".jpg") != std::string::npos)
         {
             LoadTexture(filename);
         }
