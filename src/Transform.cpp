@@ -10,12 +10,11 @@ glm::mat4 Transform::GetTransformMatrix() const
 {
     return translate(translation) * rotate(glm::radians(rotation.z),glm::vec3(0.0f,0.0f,1.0f)) * rotate(glm::radians(rotation.y),glm::vec3(0.0f,1.0f,0.0f)) * rotate(glm::radians(rotation.x),glm::vec3(1.0f,0.0f,0.0f)) * glm::scale(scale) * glm::mat4(1.0f);
 }
+
 glm::mat4 Transform::GetInverseTransformMatrix() const
 {
-    return inverse(GetInverseTransformMatrix());
+    return inverse(GetTransformMatrix());
 }
-
-
 
 glm::vec3 Transform::GetTranslationComponent() const
 {

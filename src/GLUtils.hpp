@@ -127,8 +127,8 @@ public:
 
 		positionIndices.reserve(indexArray.size());
 		texCoordIndices.reserve(indexArray.size());
-		uint uniquePosIdx = 0;
-		uint uniqueTexIdx = 0;
+		glm::uint uniquePosIdx = 0;
+		glm::uint uniqueTexIdx = 0;
 		for (const auto& [position, normal, texCoord] : vertexArray)
 		{
 			bool posAlreadyFound = false;
